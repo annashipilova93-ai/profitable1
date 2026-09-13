@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profit.able</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink-0:#12161d; --ink-1:#1b212b; --ink-2:#242c38; --line:#333d4c;
+    --parchment:#eae4d3; --parchment-dim:#a9a494;
+    --brass:#b98c53; --brass-dim:#8a6b40;
+    --sage:#7fa07a; --sage-dim:#4d5f4b;
+    --brick:#b1614a; --brick-dim:#6b3c30;
+    --amber:#c9a13b;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--ink-0); color:var(--parchment); font-family:var(--font-sans); min-height:100vh; -webkit-font-smoothing:antialiased; }
+  a{ color:var(--brass); }
+  .app{ display:flex; min-height:100vh; }
+
+  .sidebar{ width:210px; flex-shrink:0; background:var(--ink-1); border-right:1px solid var(--line); display:flex; flex-direction:column; padding:28px 0 20px; }
+  .brand{ padding:0 24px 24px; border-bottom:1px solid var(--line); margin-bottom:8px; }
+  .brand-mark{ font-family:var(--font-serif); font-style:italic; font-size:20px; line-height:1.25; }
+  .brand-sub{ font-family:var(--font-mono); font-size:11px; color:var(--parchment-dim); margin-top:6px; }
+  nav.tabs{ display:flex; flex-direction:column; margin-top:8px; }
+  .tab-btn{ display:flex; align-items:center; gap:10px; text-align:left; background:none; border:none; color:var(--parchment-dim);
+    font-family:var(--font-sans); font-size:14px; padding:12px 24px; cursor:pointer; border-left:3px solid transparent;
+    transition:color .15s ease, border-color .15s ease, background .15s ease; }
+  .tab-btn:hover{ color:var(--parchment); background:rgba(255,255,255,0.02); }
+  .tab-btn.active{ color:var(--parchment); border-left-color:var(--brass); background:rgba(185,140,83,0.08); }
+
+  .subtabs{ display:flex; gap:4px; border-bottom:1px solid var(--line); margin-bottom:26px; flex-wrap:wrap; }
+  .subtab-btn{ background:none; border:none; color:var(--parchment-dim); font-size:13px; padding:10px 16px; cursor:pointer; border-bottom:2px solid transparent; }
+  .subtab-btn:hover{ color:var(--parchment); }
+  .subtab-btn.active{ color:var(--parchment); border-bottom-color:var(--brass); }
+  .subpage{ display:none; } .subpage.active{ display:block; }
+
+  main{ flex:1; padding:36px 40px 80px; min-width:0; }
+  .page{ display:none; } .page.active{ display:block; }
+  .page-wide{ max-width:none; }
+  .page-narrow{ max-width:980px; }
+  .page-title{ font-family:var(--font-serif); font-size:26px; margin:0 0 4px; }
+  .page-sub{ color:var(--parchment-dim); font-size:13.5px; margin:0 0 26px; }
+  .section-label{ font-family:var(--font-serif); font-style:italic; font-size:16px; margin:0 0 14px; }
+
+  .field{ margin-bottom:18px; }
+  .field label{ display:block; font-size:12.5px; color:var(--parchment-dim); margin-bottom:7px; }
+  .field input[type=text], .field input[type=number], .field input[type=date], .field input[type=url],
+  .field textarea, select{ width:100%; background:var(--ink-1); border:1px solid var(--line); color:var(--parchment);
+    font-family:var(--font-sans); font-size:14px; padding:9px 11px; border-radius:3px; }
+  .field input:focus, .field textarea:focus, select:focus{ outline:none; border-color:var(--brass); }
+  .field textarea{ resize:vertical; min-height:70px; font-family:var(--font-serif); line-height:1.5; }
+  .row2{ display:flex; gap:14px; } .row2 > .field{ flex:1; }
+  .rowN{ display:flex; gap:14px; flex-wrap:wrap; } .rowN > .field{ flex:1; min-width:130px; }
+  .submit-btn{ background:var(--brass); color:var(--ink-0); border:none; padding:11px 24px; font-size:14px; font-weight:600; border-radius:3px; cursor:pointer; }
+  .submit-btn:hover{ background:#c79a63; }
+  .submit-btn:disabled{ background:var(--ink-2); color:var(--parchment-dim); cursor:not-allowed; }
+  .ghost-btn{ background:var(--ink-1); border:1px solid var(--line); color:var(--parchment); padding:9px 18px; border-radius:3px; cursor:pointer; font-size:13px; }
+  .ghost-btn:hover{ border-color:var(--brass); }
+  .form-msg{ font-size:12.5px; color:var(--sage); margin-top:10px; min-height:16px; }
+  .link-btn{ background:none;border:none;color:var(--parchment-dim); font-size:12px;font-family:var(--font-mono); cursor:pointer; text-decoration:underline; padding:0; margin-right:16px; }
+  .link-btn:hover{ color:var(--brick); }
+  .empty-state{ padding:28px 4px; color:var(--parchment-dim); font-size:13.5px; border-top:1px solid var(--line); }
+  .empty-state .lead{ font-family:var(--font-serif); font-style:italic; font-size:16px; color:var(--parchment); display:block; margin-bottom:6px; }
+  .panel{ border:1px solid var(--line); border-radius:4px; padding:22px; background:var(--ink-1); margin-bottom:26px; }
+  .toggle-2{ display:flex; gap:8px; }
+  .toggle-2 button{ flex:1; padding:9px; background:var(--ink-1); border:1px solid var(--line); color:var(--parchment-dim); border-radius:3px; cursor:pointer; font-size:13.5px; }
+  .toggle-2 button.sel.pos{ border-color:var(--sage); color:var(--sage); background:rgba(127,160,122,0.08); }
+  .toggle-2 button.sel.neg{ border-color:var(--brick); color:var(--brick); background:rgba(177,97,74,0.08); }
+  .toggle-2 button.sel.neutral{ border-color:var(--brass); color:var(--brass); background:rgba(185,140,83,0.08); }
+  .chip-group{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{ padding:7px 13px; border:1px solid var(--line); border-radius:20px; background:var(--ink-1); color:var(--parchment-dim); font-size:12.5px; cursor:pointer; display:flex; align-items:center; gap:6px; }
+  .chip .dot{ width:7px; height:7px; border-radius:50%; }
+  .chip.sel{ color:var(--parchment); border-color:var(--brass); background:rgba(185,140,83,0.1); }
+
+  /* stat cards */
+  .stat-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:14px; margin-bottom:30px; }
+  .stat-card{ border:1px solid var(--line); border-radius:4px; padding:16px; background:var(--ink-1); }
+  .stat-card .v{ font-family:var(--font-mono); font-size:24px; }
+  .stat-card .k{ font-size:12px; color:var(--parchment-dim); margin-top:6px; }
+  .stat-card.pos .v{ color:var(--sage); } .stat-card.neg .v{ color:var(--brick); }
+
+  /* ledger rows */
+  .ledger{ border-top:1px solid var(--line); }
+  .ledger-row{ display:flex; align-items:center; gap:14px; padding:14px 4px; border-bottom:1px solid var(--line); cursor:pointer; flex-wrap:wrap; }
+  .ledger-row .emoji{ font-size:16px; width:22px; flex-shrink:0; text-align:center; }
+  .ledger-row .col-date{ font-family:var(--font-mono); font-size:12px; color:var(--parchment-dim); width:78px; flex-shrink:0; }
+  .ledger-row .col-acc{ font-size:12px; color:var(--parchment-dim); width:110px; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ledger-row .col-symbol{ font-family:var(--font-mono); font-weight:600; font-size:14px; width:76px; flex-shrink:0; }
+  .ledger-row .col-dir{ font-size:11.5px; color:var(--parchment-dim); width:50px; flex-shrink:0; }
+  .ledger-row .col-mid{ flex:1; font-size:12.5px; color:var(--parchment-dim); min-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ledger-row .col-pnl{ font-family:var(--font-mono); font-size:14.5px; width:90px; text-align:right; flex-shrink:0; }
+  .col-pnl.pos{ color:var(--sage); } .col-pnl.neg{ color:var(--brick); }
+  .ledger-detail{ padding:0 4px 20px 20px; border-bottom:1px solid var(--line); display:none; }
+  .ledger-detail.open{ display:block; }
+  .detail-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:12px; }
+  .detail-item .k{ font-size:10.5px; color:var(--parchment-dim); margin-bottom:3px; }
+  .detail-item .v{ font-size:13px; }
+  .detail-tags{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+  .tag-chip{ font-size:11px; padding:3px 9px; border:1px solid var(--line); border-radius:20px; color:var(--parchment-dim); }
+  .detail-notes{ font-size:13px; line-height:1.6; white-space:pre-wrap; font-family:var(--font-serif); }
+
+  /* asset picker / idea form (unchanged from before) */
+  .asset-picker{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:26px; }
+  .asset-chip{ padding:12px 20px; border:1px solid var(--line); border-radius:4px; background:var(--ink-1); color:var(--parchment); font-family:var(--font-mono); font-size:14px; cursor:pointer; }
+  .asset-chip:hover{ border-color:var(--brass-dim); }
+  .asset-chip.sel{ border-color:var(--brass); background:rgba(185,140,83,0.12); color:var(--brass); }
+  .asset-chip-add{ color:var(--brass); font-weight:700; border-style:dashed; }
+  .asset-add-row{ display:flex; gap:8px; margin:-14px 0 26px; max-width:340px; }
+  .asset-add-row input{ flex:1; background:var(--ink-1); border:1px solid var(--line); color:var(--parchment); font-family:var(--font-sans); font-size:13.5px; padding:8px 10px; border-radius:3px; }
+  .asset-add-row input:focus{ outline:none; border-color:var(--brass); }
+  .asset-add-row button{ background:var(--ink-2); border:1px solid var(--line); color:var(--parchment); padding:0 16px; border-radius:3px; cursor:pointer; font-size:13px; }
+  .asset-add-row button:hover{ border-color:var(--brass); }
+  .idea-form{ border:1px solid var(--line); border-radius:4px; padding:24px; background:var(--ink-1); margin-bottom:30px; }
+  .idea-form-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:18px; }
+  .idea-form-head h3{ font-family:var(--font-serif); font-size:18px; margin:0; }
+  .idea-form-head .asset-tag{ font-family:var(--font-mono); font-size:12.5px; color:var(--brass); }
+  .screenshot-zone{ border:1px dashed var(--line); border-radius:4px; padding:18px; text-align:center; color:var(--parchment-dim); font-size:12.5px; cursor:pointer; outline:none; }
+  .screenshot-zone:focus{ border-color:var(--brass); }
+  .screenshot-zone.has-img{ padding:10px; }
+  .screenshot-zone img{ max-width:100%; max-height:300px; border-radius:3px; display:block; margin:0 auto; }
+  .screenshot-zone input[type=file]{ display:none; }
+  .comment-cols{ display:flex; gap:14px; } .comment-cols .field{ flex:1; }
+  .conditions-box{ border-top:1px solid var(--line); padding-top:18px; margin-top:4px; }
+  .cond-manage{ display:flex; gap:8px; margin-bottom:12px; } .cond-manage input{ flex:1; }
+  .cond-manage button{ background:var(--ink-2); border:1px solid var(--line); color:var(--parchment); padding:0 15px; border-radius:3px; cursor:pointer; font-size:12.5px; }
+  .cond-template-list{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .cond-template-item{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--parchment-dim); border:1px solid var(--line); border-radius:20px; padding:4px 6px 4px 12px; }
+  .cond-template-item button{ background:none; border:none; color:var(--parchment-dim); cursor:pointer; font-size:14px; line-height:1; padding:2px; }
+  .cond-template-item button:hover{ color:var(--brick); }
+  .cond-check-list{ margin-bottom:16px; }
+  .cond-check-item{ display:flex; align-items:center; gap:12px; padding:9px 0; border-bottom:1px solid var(--line); cursor:pointer; user-select:none; }
+  .cond-check-item:last-child{ border-bottom:none; }
+  .cond-box{ width:19px; height:19px; border:1px solid var(--line); border-radius:3px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; color:transparent; }
+  .cond-check-item.checked .cond-box{ background:var(--sage); border-color:var(--sage); color:var(--ink-0); }
+  .cond-check-item.checked .cond-text{ color:var(--parchment); }
+  .cond-text{ font-size:13.5px; color:var(--parchment-dim); }
+  .cond-empty{ font-size:12.5px; color:var(--parchment-dim); margin-bottom:12px; }
+  .idea-open-row{ display:flex; align-items:center; gap:16px; margin-top:6px; }
+  .cond-progress{ font-family:var(--font-mono); font-size:12px; color:var(--parchment-dim); }
+  .idea-card{ border:1px solid var(--line); border-radius:4px; padding:15px 17px; margin-bottom:12px; background:var(--ink-1); }
+  .idea-card-top{ display:flex; align-items:center; justify-content:space-between; cursor:pointer; flex-wrap:wrap; gap:8px; }
+  .idea-card-meta{ display:flex; align-items:center; gap:14px; }
+  .idea-card-asset{ font-family:var(--font-mono); font-weight:600; font-size:13.5px; color:var(--brass); }
+  .idea-card-date{ font-family:var(--font-mono); font-size:11.5px; color:var(--parchment-dim); }
+  .idea-card-status{ font-size:11px; padding:3px 10px; border-radius:20px; border:1px solid var(--line); color:var(--parchment-dim); }
+  .idea-card-status.opened{ color:var(--sage); border-color:var(--sage-dim); }
+  .idea-card-body{ display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--line); }
+  .idea-card-body.open{ display:block; }
+  .idea-card-body img{ max-width:100%; border-radius:3px; margin-bottom:12px; }
+  .idea-card-body .notes-block{ margin-bottom:12px; }
+  .idea-card-body .notes-block .k{ font-size:10.5px; color:var(--parchment-dim); margin-bottom:4px; }
+  .idea-card-body .notes-block .v{ font-family:var(--font-serif); font-size:13.5px; line-height:1.6; white-space:pre-wrap; }
+  .idea-card-body .cond-list-readonly{ font-size:12.5px; margin-bottom:12px; }
+  .idea-card-body .cond-list-readonly div{ padding:4px 0; color:var(--parchment-dim); }
+  .idea-card-body .cond-list-readonly div.ok{ color:var(--sage); }
+
+  /* calendar (shared pattern) */
+  .calendar-wrap{ margin-top:36px; border-top:1px solid var(--line); padding-top:26px; }
+  .cal-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+  .cal-header h3{ font-family:var(--font-serif); font-size:17px; margin:0; }
+  .cal-nav{ display:flex; gap:8px; }
+  .cal-nav button{ background:var(--ink-1); border:1px solid var(--line); color:var(--parchment); width:30px; height:30px; border-radius:3px; cursor:pointer; font-size:14px; }
+  .cal-nav button:hover{ border-color:var(--brass); }
+  .cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .cal-dow{ text-align:center; font-size:10.5px; color:var(--parchment-dim); padding:6px 0; font-family:var(--font-mono); }
+  .cal-cell{ aspect-ratio:1/0.85; border:1px solid var(--line); border-radius:3px; padding:7px; display:flex; flex-direction:column; justify-content:space-between; cursor:pointer; background:var(--ink-1); }
+  .cal-cell.empty{ visibility:hidden; }
+  .cal-cell:hover{ border-color:var(--brass-dim); }
+  .cal-cell.has-ideas{ border-color:var(--brass-dim); background:rgba(185,140,83,0.06); }
+  .cal-cell.has-pos{ border-color:var(--sage-dim); background:rgba(127,160,122,0.08); }
+  .cal-cell.has-neg{ border-color:var(--brick-dim); background:rgba(177,97,74,0.08); }
+  .cal-cell.selected{ border-color:var(--brass); }
+  .cal-daynum{ font-family:var(--font-mono); font-size:12.5px; }
+  .cal-count{ font-size:10px; color:var(--brass); }
+  .cal-pnl{ font-size:10.5px; font-family:var(--font-mono); }
+  .cal-pnl.pos{ color:var(--sage); } .cal-pnl.neg{ color:var(--brick); }
+  .cal-daylist{ margin-top:20px; }
+
+  .quick-btn-row{ display:flex; align-items:center; gap:16px; margin-bottom:28px; }
+  .quick-plus{ width:56px; height:56px; border-radius:50%; background:var(--brick); color:var(--ink-0); border:none; font-size:26px; cursor:pointer; font-weight:700; line-height:1; }
+  .quick-plus:hover{ background:#c46f57; }
+  .quick-caption{ font-size:12.5px; color:var(--parchment-dim); line-height:1.5; max-width:420px; }
+  .quick-count{ font-family:var(--font-mono); font-size:20px; color:var(--brick); margin-left:auto; }
+
+  .emoji-row{ display:flex; gap:10px; }
+  .emoji-btn{ width:42px; height:42px; border-radius:50%; border:1px solid var(--line); background:var(--ink-1); font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .emoji-btn.sel{ border-color:var(--brass); box-shadow:0 0 0 2px rgba(185,140,83,0.35) inset; }
+
+  /* Home page: mood scale */
+  .mood-row{ display:flex; align-items:center; gap:28px; flex-wrap:wrap; }
+  .mood-scale-wrap{ flex:1; min-width:220px; }
+  .mood-scale{ position:relative; height:14px; border-radius:8px; width:100%;
+    background:linear-gradient(90deg, #b1614a 0%, #8c5b8c 50%, #7fa07a 100%); }
+  .mood-marker{ position:absolute; top:-5px; width:2px; height:24px; background:var(--parchment); }
+  .mood-marker::after{ content:''; position:absolute; top:-4px; left:-4px; width:10px; height:10px; border-radius:50%; background:inherit; }
+  .mood-marker-start{ background:var(--parchment-dim); opacity:0.7; }
+  .mood-marker-start::after{ background:var(--parchment-dim); }
+  .mood-marker-current{ background:var(--parchment); }
+  .mood-marker-current::after{ background:var(--parchment); }
+  .mood-scale-caption{ font-size:12px; color:var(--parchment-dim); margin-top:12px; line-height:1.5; }
+
+  /* Home page: market overview */
+  .market-overview-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+  .market-overview-cell{ border:1px solid var(--line); border-radius:4px; overflow:hidden; background:var(--ink-2); min-height:140px; }
+
+  /* Home page: options list */
+  .option-row{ display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .option-row .opt-type{ font-family:var(--font-mono); font-weight:600; width:52px; }
+  .option-row .opt-type.CALL{ color:var(--sage); } .option-row .opt-type.PUT{ color:var(--brick); }
+  .option-row .opt-underlying{ width:90px; font-family:var(--font-mono); }
+  .option-row .opt-strike{ width:100px; font-family:var(--font-mono); color:var(--parchment-dim); }
+  .option-row .opt-note{ flex:1; color:var(--parchment-dim); }
+
+  /* News tab: important news list */
+  .imp-news-item{ border:1px solid var(--line); border-radius:4px; padding:14px; margin-bottom:10px; }
+  .imp-news-head{ display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap; }
+  .imp-badge{ font-size:10.5px; padding:3px 9px; border-radius:20px; border:1px solid var(--line); }
+  .imp-badge.high{ color:var(--brick); border-color:var(--brick-dim); }
+  .imp-badge.medium{ color:var(--amber); border-color:var(--brass-dim); }
+  .imp-badge.low{ color:var(--parchment-dim); }
+  .imp-news-title{ font-family:var(--font-serif); font-size:14.5px; flex:1; }
+  .imp-news-comment{ font-size:13px; color:var(--parchment-dim); line-height:1.5; margin-bottom:8px; white-space:pre-wrap; }
+  .imp-status-toggle{ display:flex; gap:6px; }
+  .imp-status-toggle button{ font-size:11.5px; padding:5px 10px; border-radius:3px; border:1px solid var(--line); background:var(--ink-2); color:var(--parchment-dim); cursor:pointer; }
+  .imp-status-toggle button.sel{ color:var(--brass); border-color:var(--brass); }
+
+  .chart-panel{ border:1px solid var(--line); border-radius:4px; padding:20px; background:var(--ink-1); margin-bottom:26px; }
+  .chart-panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+  .chart-panel-head h3{ font-family:var(--font-serif); font-size:16px; margin:0; }
+  .chart-panel-head select{ width:auto; min-width:160px; }
+  .granularity-toggle{ display:flex; gap:6px; }
+  .granularity-toggle button{ background:var(--ink-2); border:1px solid var(--line); color:var(--parchment-dim); padding:6px 12px; font-size:12px; border-radius:3px; cursor:pointer; }
+  .granularity-toggle button.sel{ color:var(--brass); border-color:var(--brass); }
+  .emotion-zone-legend{ display:flex; gap:18px; font-size:11.5px; color:var(--parchment-dim); margin-top:10px; }
+  .emotion-zone-legend span{ display:flex; align-items:center; gap:6px; }
+  .emotion-zone-legend .dot{ width:8px; height:8px; border-radius:50%; }
+  canvas{ max-width:100%; }
+
+  .accounts-list{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:22px; }
+  .account-pill{ border:1px solid var(--line); border-radius:20px; padding:6px 14px; font-size:12.5px; color:var(--parchment-dim); display:flex; align-items:center; gap:8px; }
+  .account-pill.blown{ border-color:var(--brick-dim); color:var(--brick); }
+  .account-pill b{ color:var(--parchment); font-family:var(--font-mono); }
+  .account-pill button{ background:none; border:none; color:var(--parchment-dim); cursor:pointer; font-size:13px; }
+  .account-pill button:hover{ color:var(--brick); }
+
+  .news-widget-frame{ border:1px solid var(--line); border-radius:4px; overflow:hidden; background:var(--ink-1); min-height:560px; width:100%; }
+  .news-fallback{ font-size:12.5px; color:var(--parchment-dim); margin:14px 0 30px; line-height:1.6; }
+  .news-analysis-panel{ border-top:1px solid var(--line); padding-top:26px; }
+
+  .stat-footnote{ font-size:11.5px; color:var(--parchment-dim); margin-top:-14px; margin-bottom:26px; line-height:1.6; }
+
+  @media (max-width: 760px){
+    .app{ flex-direction:column; }
+    .sidebar{ width:100%; flex-direction:row; overflow-x:auto; padding:10px 0; }
+    .brand{ display:none; }
+    nav.tabs{ flex-direction:row; }
+    .tab-btn{ border-left:none; border-bottom:3px solid transparent; padding:10px 14px; white-space:nowrap; }
+    .tab-btn.active{ border-bottom-color:var(--brass); }
+    main{ padding:20px 14px 60px; }
+    .row2, .rowN, .comment-cols{ flex-direction:column; gap:0; }
+    .detail-grid{ grid-template-columns:1fr 1fr; }
+    .cal-cell{ padding:4px; aspect-ratio:1/1; }
+    .cal-count, .cal-pnl{ font-size:9px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">Profit.able</div>
+      <div class="brand-sub">рабочий стол</div>
+    </div>
+    <nav class="tabs">
+      <button class="tab-btn active" data-page="home">Главная</button>
+      <button class="tab-btn" data-page="news">Новости</button>
+      <button class="tab-btn" data-page="ideas">Торговые идеи</button>
+      <button class="tab-btn" data-page="journal">Журнал</button>
+      <button class="tab-btn" data-page="stats">Статистика</button>
+      <button class="tab-btn" data-page="profile">Личный кабинет</button>
+    </nav>
+  </div>
+
+  <main>
+    <!-- ================= HOME ================= -->
+    <section class="page active page-wide" id="page-home">
+      <h1 class="page-title" id="homeGreeting">Здравствуйте</h1>
+      <p class="page-sub">Ваш рабочий стол на сегодня</p>
+
+      <div class="panel">
+        <div class="section-label">Настроение сегодня</div>
+        <div class="mood-row">
+          <div class="emoji-row" id="moodEmojis">
+            <button type="button" class="emoji-btn" data-v="1" title="Грустное">😢</button>
+            <button type="button" class="emoji-btn" data-v="2" title="Нейтральное">😐</button>
+            <button type="button" class="emoji-btn" data-v="1.5" title="Злое">😠</button>
+            <button type="button" class="emoji-btn" data-v="3" title="Счастливое">😄</button>
+          </div>
+          <div class="mood-scale-wrap">
+            <div class="mood-scale" id="moodScale">
+              <div class="mood-marker mood-marker-start" id="moodMarkerStart" style="display:none"></div>
+              <div class="mood-marker mood-marker-current" id="moodMarkerCurrent" style="display:none"></div>
+            </div>
+            <div class="mood-scale-caption" id="moodScaleCaption">Отметьте состояние — начальный уровень дня зафиксируется, а дальнейшие отметки будут сравниваться с ним.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="section-label">Обзор рынка</div>
+        <div class="market-overview-grid" id="marketOverviewGrid"></div>
+      </div>
+
+      <div class="panel">
+        <div class="section-label">Опционы — call / put</div>
+        <form id="optionForm" class="rowN" style="align-items:flex-end;margin-bottom:16px">
+          <div class="field" style="max-width:160px"><label for="opt-underlying">Базовый актив</label><input type="text" id="opt-underlying" placeholder="XAU, SPX..." required></div>
+          <div class="field" style="max-width:130px"><label>Тип</label><div class="toggle-2" id="opt-type"><button type="button" data-v="CALL" class="pos">CALL</button><button type="button" data-v="PUT" class="neg">PUT</button></div></div>
+          <div class="field" style="max-width:130px"><label for="opt-strike">Страйк</label><input type="number" step="0.01" id="opt-strike" required></div>
+          <div class="field" style="flex:1;min-width:160px"><label for="opt-note">Комментарий</label><input type="text" id="opt-note" placeholder="необязательно"></div>
+          <button type="submit" class="submit-btn" style="margin-bottom:18px">Добавить</button>
+        </form>
+        <div id="optionsList"></div>
+      </div>
+
+      <div class="panel">
+        <div class="section-label">Последние важные релизы — USD / EUR</div>
+        <p class="page-sub" style="margin-bottom:12px">Виджет TradingView не умеет фильтровать «последние 2 часа» — но события отсортированы по времени за сегодня, актуальные легко найти по текущему часу.</p>
+        <div class="news-widget-frame" id="miniNewsFrame" style="min-height:340px"></div>
+      </div>
+
+      <div class="panel" id="attentionPanel">
+        <div class="section-label">ATTENTION</div>
+        <div id="attentionContent"></div>
+      </div>
+    </section>
+
+    <!-- ================= NEWS ================= -->
+    <section class="page page-wide" id="page-news">
+      <h1 class="page-title">Новости</h1>
+      <p class="page-sub">Ожидаемые релизы и экономический календарь</p>
+      <div class="news-widget-frame" id="newsWidgetFrame"></div>
+      <div class="news-fallback">Если виджет не отображается прямо здесь (некоторые песочницы блокируют внешние скрипты) — откройте сохранённый файл в браузере, там календарь TradingView загрузится полностью. Прямая ссылка: <a href="https://www.tradingview.com/economic-calendar/" target="_blank" rel="noopener">economic calendar на TradingView</a>.</div>
+
+      <div class="news-analysis-panel">
+        <div class="section-label">Свой новостной анализ</div>
+        <p class="page-sub" style="margin-bottom:16px">Коротко зафиксируйте, как сегодняшние релизы могут повлиять на ваши активы</p>
+        <div class="field"><textarea id="newsAnalysisInput" placeholder="Например: в 15:30 нонфармы по США — ожидаю всплеск волатильности по золоту и индексам..." style="min-height:100px"></textarea></div>
+        <button class="submit-btn" id="newsAnalysisSave">Сохранить запись</button>
+        <div class="form-msg" id="newsAnalysisMsg"></div>
+        <div id="newsAnalysisList" style="margin-top:20px"></div>
+      </div>
+
+      <div class="news-analysis-panel">
+        <div class="section-label">Важные для меня релизы</div>
+        <p class="page-sub" style="margin-bottom:16px">Виджет TradingView нельзя разметить изнутри (это чужой встроенный фрейм) — отмечайте вручную то, что для вас важно, и отслеживайте, как реализуется план.</p>
+        <form id="importantNewsForm">
+          <div class="rowN">
+            <div class="field" style="flex:2"><label for="in-title">Событие / релиз</label><input type="text" id="in-title" placeholder="Например: CPI США, 15:30" required></div>
+            <div class="field" style="max-width:160px"><label for="in-importance">Важность</label><select id="in-importance"><option value="high">Высокая</option><option value="medium">Средняя</option><option value="low">Низкая</option></select></div>
+          </div>
+          <div class="field"><label for="in-comment">Комментарий / план</label><textarea id="in-comment" placeholder="Что вы ожидаете и как планируете действовать"></textarea></div>
+          <button type="submit" class="submit-btn">Добавить в отслеживание</button>
+        </form>
+        <div id="importantNewsList" style="margin-top:20px"></div>
+      </div>
+    </section>
+
+    <!-- ================= TRADING IDEAS ================= -->
+    <section class="page page-narrow" id="page-ideas">
+      <h1 class="page-title">Торговые идеи</h1>
+      <p class="page-sub">Выберите актив, зафиксируйте анализ и условия входа</p>
+      <div class="asset-picker" id="assetPicker"></div>
+      <div class="asset-add-row" id="assetAddRow" style="display:none">
+        <input type="text" id="assetAddInput" placeholder="Название своего актива" maxlength="20">
+        <button type="button" id="assetAddConfirm">Добавить</button>
+      </div>
+      <div id="ideaFormWrap" style="display:none"></div>
+      <div class="section-label" id="assetHistoryLabel" style="display:none">История по активу</div>
+      <div id="assetIdeaHistory"></div>
+      <div class="calendar-wrap">
+        <div class="cal-header">
+          <h3 id="calMonthLabel"></h3>
+          <div class="cal-nav"><button id="calPrev">‹</button><button id="calNext">›</button></div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-daylist" id="calDayList"></div>
+      </div>
+    </section>
+
+    <!-- ================= JOURNAL ================= -->
+    <section class="page page-narrow" id="page-journal">
+      <h1 class="page-title">Журнал</h1>
+      <p class="page-sub">Счета, сделки и эмоциональное состояние</p>
+
+      <div class="quick-btn-row">
+        <button class="quick-plus" id="quickPlusBtn">+</button>
+        <div class="quick-caption">Нажимайте каждый раз, когда открыли сделку без критериев — честно, без прикрас. Это отдельный счётчик дисциплины.</div>
+        <div class="quick-count" id="quickCount">0</div>
+      </div>
+
+      <div class="panel">
+        <div class="section-label">Счета</div>
+        <div class="accounts-list" id="accountsList"></div>
+        <form id="accountForm">
+          <div class="rowN">
+            <div class="field"><label for="acc-firm">Проп-фирма</label><input type="text" id="acc-firm" placeholder="Название" required></div>
+            <div class="field"><label for="acc-size">Размер счёта</label><input type="number" id="acc-size" step="0.01" required></div>
+            <div class="field"><label for="acc-dd">Макс. просадка (%)</label><input type="number" id="acc-dd" step="0.1"></div>
+            <div class="field"><label for="acc-dll">DLL (лимит дневного убытка, %)</label><input type="number" id="acc-dll" step="0.1"></div>
+          </div>
+          <button type="submit" class="submit-btn">Создать счёт</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="section-label">Новая сделка</div>
+        <form id="tradeForm">
+          <div class="rowN">
+            <div class="field"><label for="t-date">Дата</label><input type="date" id="t-date" required></div>
+            <div class="field"><label for="t-session">Сессия</label>
+              <select id="t-session"><option value="">—</option><option value="ASIA">ASIA</option><option value="LONDON">LONDON</option><option value="NY">NY</option></select>
+            </div>
+            <div class="field"><label for="t-account">Счёт</label><select id="t-account"></select></div>
+            <div class="field"><label for="t-asset">Актив</label>
+              <select id="t-asset"><option value="XAU">XAU</option><option value="XAG">XAG</option><option value="NQ">NQ</option><option value="S&P500">S&P500</option><option value="GER40">GER40</option><option value="other">Другой</option></select>
+            </div>
+            <div class="field" id="t-asset-other-wrap" style="display:none"><label for="t-asset-other">Свой актив</label><input type="text" id="t-asset-other"></div>
+          </div>
+          <div class="rowN">
+            <div class="field"><label for="t-strategy">Стратегия</label><input type="text" id="t-strategy" placeholder="Название стратегии"></div>
+            <div class="field"><label>Позиция</label><div class="toggle-2" id="t-position"><button type="button" data-v="LONG" class="pos">LONG</button><button type="button" data-v="SHORT" class="neg">SHORT</button></div></div>
+            <div class="field"><label>Вход</label><div class="toggle-2" id="t-entry"><button type="button" data-v="MARKET" class="neutral">MARKET</button><button type="button" data-v="LIMIT" class="neutral">LIMIT</button></div></div>
+          </div>
+          <div class="rowN">
+            <div class="field"><label for="t-risk">Риск, %</label><input type="number" id="t-risk" step="0.01" required></div>
+            <div class="field"><label for="t-rr">RR</label><input type="number" id="t-rr" step="0.01" required></div>
+            <div class="field"><label>Результат</label><div class="toggle-2" id="t-result"><button type="button" data-v="TP" class="pos">TP</button><button type="button" data-v="SL" class="neg">SL</button></div></div>
+            <div class="field"><label>Profit</label><input type="text" id="t-profit-preview" readonly style="color:var(--brass);font-family:var(--font-mono)"></div>
+          </div>
+
+          <div class="field">
+            <label>Состояние перед входом</label>
+            <div class="emoji-row" id="t-preemoji">
+              <button type="button" class="emoji-btn" data-v="red" title="Негативное состояние">😠</button>
+              <button type="button" class="emoji-btn" data-v="yellow" title="Нейтральное состояние">😐</button>
+              <button type="button" class="emoji-btn" data-v="green" title="Отличное настроение">😊</button>
+            </div>
+          </div>
+
+          <div class="field"><label>Состояние после закрытия</label><div class="chip-group" id="t-afteremo"></div></div>
+          <div class="field"><label>Паттерны поведения</label><div class="chip-group" id="t-tags"></div></div>
+          <div class="field"><label for="t-notes">Заметки</label><textarea id="t-notes" placeholder="Что происходило по ходу сделки?"></textarea></div>
+
+          <button type="submit" class="submit-btn">Записать сделку</button>
+          <div class="form-msg" id="tradeFormMsg"></div>
+        </form>
+      </div>
+
+      <div class="section-label">Сделки</div>
+      <div class="rowN" style="margin-bottom:16px">
+        <div class="field"><select id="filterAccount"><option value="">Все счета</option></select></div>
+        <div class="field"><select id="filterResult2"><option value="">Любой результат</option><option value="TP">TP</option><option value="SL">SL</option></select></div>
+      </div>
+      <div id="tradesLedger" class="empty-state">Загрузка…</div>
+
+      <div class="chart-panel">
+        <div class="chart-panel-head">
+          <h3>Баланс счёта</h3>
+          <select id="balanceAccountSelect"></select>
+        </div>
+        <canvas id="balanceChart" height="90"></canvas>
+      </div>
+
+      <div class="chart-panel">
+        <div class="chart-panel-head">
+          <h3>Эмоциональное состояние</h3>
+          <div class="granularity-toggle" id="emoGranularity">
+            <button data-g="day" class="sel">день</button>
+            <button data-g="week">неделя</button>
+            <button data-g="month">месяц</button>
+          </div>
+        </div>
+        <canvas id="emotionChart" height="90"></canvas>
+        <div class="emotion-zone-legend">
+          <span><span class="dot" style="background:var(--brick)"></span>ДНО</span>
+          <span><span class="dot" style="background:var(--amber)"></span>РУТИНА</span>
+          <span><span class="dot" style="background:var(--sage)"></span>ЭЙФОРИЯ</span>
+        </div>
+      </div>
+
+      <div class="calendar-wrap">
+        <div class="cal-header">
+          <h3 id="jCalMonthLabel"></h3>
+          <div style="display:flex;align-items:center;gap:14px">
+            <select id="jCalAccountSelect" style="width:auto;min-width:150px"></select>
+            <div class="cal-nav"><button id="jCalPrev">‹</button><button id="jCalNext">›</button></div>
+          </div>
+        </div>
+        <div class="cal-grid" id="jCalGrid"></div>
+        <div class="cal-daylist" id="jCalDayList"></div>
+      </div>
+    </section>
+
+    <!-- ================= STATISTICS ================= -->
+    <section class="page page-narrow" id="page-stats">
+      <h1 class="page-title">Статистика</h1>
+      <p class="page-sub">Сводные показатели по всем счетам и сделкам</p>
+      <div id="statsContent" class="empty-state">Загрузка…</div>
+    </section>
+
+    <!-- ================= PROFILE ================= -->
+    <section class="page page-narrow" id="page-profile">
+      <h1 class="page-title">Личный кабинет</h1>
+      <p class="page-sub">Данные хранятся только в этом файле, локально у вас</p>
+
+      <div class="panel">
+        <form id="profileForm">
+          <div class="row2">
+            <div class="field"><label for="pr-name">Имя</label><input type="text" id="pr-name" placeholder="Как вас зовут"></div>
+            <div class="field"><label for="pr-age">Возраст</label><input type="number" id="pr-age"></div>
+          </div>
+          <div class="field"><label for="pr-concept">Торговая концепция</label><textarea id="pr-concept" placeholder="Кратко опишите подход, по которому вы торгуете"></textarea></div>
+          <button type="submit" class="submit-btn">Сохранить профиль</button>
+          <div class="form-msg" id="profileMsg"></div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="section-label">Пройденные обучения</div>
+        <form id="courseForm" class="rowN" style="align-items:flex-end;margin-bottom:14px">
+          <div class="field" style="flex:2"><label for="course-name">Название</label><input type="text" id="course-name" required></div>
+          <div class="field" style="max-width:160px"><label for="course-cost">Сумма вложений</label><input type="number" step="0.01" id="course-cost"></div>
+          <button type="submit" class="submit-btn" style="margin-bottom:18px">Добавить</button>
+        </form>
+        <div id="coursesList"></div>
+        <div class="stat-footnote" id="coursesTotalCaption" style="margin-top:14px"></div>
+      </div>
+
+      <div class="panel">
+        <div class="section-label">Обучения и материалы, которые сейчас изучаете</div>
+        <form id="linkForm" class="rowN" style="align-items:flex-end;margin-bottom:14px">
+          <div class="field" style="flex:1"><label for="link-label">Название</label><input type="text" id="link-label" required></div>
+          <div class="field" style="flex:2"><label for="link-url">Ссылка</label><input type="url" id="link-url" required></div>
+          <button type="submit" class="submit-btn" style="margin-bottom:18px">Добавить</button>
+        </form>
+        <div id="linksList"></div>
+      </div>
+
+      <div class="panel">
+        <div class="section-label">Перенос данных</div>
+        <p class="page-sub" style="margin-bottom:16px">Память этой страницы хранится внутри текущего чата с Claude. Чтобы перенести все счета, сделки, идеи и профиль в другой чат или другому пользователю — скачайте файл-копию и загрузите его там.</p>
+        <div class="rowN" style="align-items:center">
+          <button type="button" class="submit-btn" id="exportBtn">Скачать резервную копию</button>
+          <button type="button" class="ghost-btn" id="importBtn">Загрузить резервную копию</button>
+          <input type="file" id="importFileInput" accept="application/json" style="display:none">
+        </div>
+        <div class="form-msg" id="exportImportMsg"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+  /* ============================================================ SHARED HELPERS ============================================================ */
+  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function fmtMoney(n){ const s = n>=0?'+':''; return s + n.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function fmtDate(d){ const dt = new Date(d+'T00:00:00'); return dt.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'2-digit'}); }
+  function todayStr(){ return new Date().toISOString().slice(0,10); }
+  function isoWeek(dateStr){
+    const d = new Date(dateStr+'T00:00:00');
+    d.setHours(0,0,0,0);
+    d.setDate(d.getDate()+3-((d.getDay()+6)%7));
+    const week1 = new Date(d.getFullYear(),0,4);
+    return d.getFullYear()+'-W'+ (1+Math.round(((d-week1)/86400000-3+((week1.getDay()+6)%7))/7));
+  }
+  function monthKey(dateStr){ return dateStr.slice(0,7); }
+
+  document.querySelectorAll('.sidebar .tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.sidebar .tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('main > .page').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('page-'+btn.dataset.page).classList.add('active');
+      if(btn.dataset.page==='stats') renderStats();
+    });
+  });
+
+  /* ============================================================ NEWS TAB ============================================================ */
+  (function initNewsWidget(){
+    const frame = document.getElementById('newsWidgetFrame');
+    const container = document.createElement('div');
+    container.className = 'tradingview-widget-container';
+    container.style.width='100%';
+    const inner = document.createElement('div');
+    inner.className = 'tradingview-widget-container__widget';
+    container.appendChild(inner);
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js';
+    script.async = true;
+    script.textContent = JSON.stringify({
+      colorTheme:'dark', isTransparent:true, width:'100%', height:'600',
+      locale:'ru', importanceFilter:'-1,0,1', countryFilter:'us,eu,gb,jp,de,cn,ru'
+    });
+    container.appendChild(script);
+    frame.appendChild(container);
+  })();
+
+  let newsAnalysis = [];
+  async function loadNewsAnalysis(){
+    try{ const res = await window.storage.get('newsAnalysis', false); newsAnalysis = res&&res.value ? JSON.parse(res.value) : []; }
+    catch(e){ newsAnalysis = []; }
+    renderNewsAnalysisList();
+  }
+  async function saveNewsAnalysis(){ try{ await window.storage.set('newsAnalysis', JSON.stringify(newsAnalysis), false); }catch(e){} }
+  function renderNewsAnalysisList(){
+    const el = document.getElementById('newsAnalysisList');
+    if(newsAnalysis.length===0){ el.innerHTML = '<div class="empty-state">Записей пока нет.</div>'; return; }
+    const sorted = [...newsAnalysis].sort((a,b)=>b.createdAt-a.createdAt);
+    el.innerHTML='';
+    sorted.forEach(n=>{
+      const row = document.createElement('div');
+      row.style.cssText='border-bottom:1px solid var(--line);padding:12px 0;';
+      row.innerHTML = `<div style="font-family:var(--font-mono);font-size:11.5px;color:var(--parchment-dim);margin-bottom:6px">${new Date(n.createdAt).toLocaleString('ru-RU')}</div><div style="font-family:var(--font-serif);font-size:14px;line-height:1.6;white-space:pre-wrap">${escapeHtml(n.text)}</div><button class="link-btn" style="margin-top:6px" data-del="${n.id}">Удалить</button>`;
+      row.querySelector('[data-del]').addEventListener('click', async ()=>{
+        newsAnalysis = newsAnalysis.filter(x=>x.id!==n.id);
+        await saveNewsAnalysis(); renderNewsAnalysisList();
+      });
+      el.appendChild(row);
+    });
+  }
+  document.getElementById('newsAnalysisSave').addEventListener('click', async ()=>{
+    const ta = document.getElementById('newsAnalysisInput');
+    const msg = document.getElementById('newsAnalysisMsg');
+    if(!ta.value.trim()){ msg.style.color='var(--brick)'; msg.textContent='Введите текст.'; return; }
+    newsAnalysis.push({id:'n_'+Date.now(), text:ta.value.trim(), createdAt:Date.now()});
+    await saveNewsAnalysis();
+    ta.value='';
+    msg.style.color='var(--sage)'; msg.textContent='Сохранено.';
+    renderNewsAnalysisList();
+    setTimeout(()=>msg.textContent='',2000);
+  });
+  loadNewsAnalysis();
+
+  let importantNews = [];
+  async function loadImportantNews(){
+    try{ const res = await window.storage.get('importantNews', false); importantNews = res&&res.value ? JSON.parse(res.value) : []; }
+    catch(e){ importantNews = []; }
+    renderImportantNews();
+  }
+  async function saveImportantNews(){ try{ await window.storage.set('importantNews', JSON.stringify(importantNews), false); }catch(e){} }
+  const IMP_LABELS = {high:'высокая', medium:'средняя', low:'низкая'};
+  const STATUS_LABELS = {pending:'ожидается', met:'план сработал', missed:'план не сработал'};
+  function renderImportantNews(){
+    const el = document.getElementById('importantNewsList');
+    if(importantNews.length===0){ el.innerHTML = '<div class="empty-state">Пока ничего не отмечено.</div>'; return; }
+    const sorted = [...importantNews].sort((a,b)=>b.createdAt-a.createdAt);
+    el.innerHTML='';
+    sorted.forEach(n=>{
+      const item = document.createElement('div'); item.className='imp-news-item';
+      item.innerHTML = `
+        <div class="imp-news-head">
+          <span class="imp-badge ${n.importance}">${IMP_LABELS[n.importance]}</span>
+          <span class="imp-news-title">${escapeHtml(n.title)}</span>
+        </div>
+        ${n.comment?`<div class="imp-news-comment">${escapeHtml(n.comment)}</div>`:''}
+        <div class="imp-status-toggle" data-id="${n.id}">
+          <button type="button" data-s="pending" class="${n.status==='pending'?'sel':''}">ожидается</button>
+          <button type="button" data-s="met" class="${n.status==='met'?'sel':''}">план сработал</button>
+          <button type="button" data-s="missed" class="${n.status==='missed'?'sel':''}">план не сработал</button>
+        </div>
+        <button class="link-btn" style="margin-top:10px" data-del="${n.id}">Удалить</button>
+      `;
+      item.querySelector('.imp-status-toggle').addEventListener('click', async (ev)=>{
+        if(ev.target.tagName!=='BUTTON') return;
+        n.status = ev.target.dataset.s; await saveImportantNews(); renderImportantNews();
+      });
+      item.querySelector('[data-del]').addEventListener('click', async ()=>{
+        importantNews = importantNews.filter(x=>x.id!==n.id); await saveImportantNews(); renderImportantNews();
+      });
+      el.appendChild(item);
+    });
+  }
+  document.getElementById('importantNewsForm').addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+    importantNews.push({ id:'in_'+Date.now(), title:document.getElementById('in-title').value.trim(),
+      importance:document.getElementById('in-importance').value, comment:document.getElementById('in-comment').value.trim(),
+      status:'pending', createdAt:Date.now() });
+    await saveImportantNews();
+    ev.target.reset();
+    renderImportantNews();
+  });
+  loadImportantNews();
+
+  /* ============================================================ TRADING IDEAS TAB ============================================================ */
+  const ASSETS = ['XAU','XAG','NQ','S&P500','DAX40'];
+  let ideas = [], conditionsTemplate = [], customAssets = [], selectedAsset = null, currentConditions = [], currentScreenshot = null;
+  let calYear, calMonth, selectedCalDay = null;
+
+  async function loadIdeasData(){
+    try{ const res = await window.storage.get('ideas', false); ideas = res&&res.value ? JSON.parse(res.value) : []; }catch(e){ ideas=[]; }
+    try{ const res2 = await window.storage.get('conditionsTemplate', false); conditionsTemplate = res2&&res2.value ? JSON.parse(res2.value) : []; }catch(e){ conditionsTemplate=[]; }
+    try{ const res3 = await window.storage.get('customIdeaAssets', false); customAssets = res3&&res3.value ? JSON.parse(res3.value) : []; }catch(e){ customAssets=[]; }
+    renderAssetPicker(); renderCalendar();
+  }
+  async function saveIdeasList(){ try{ await window.storage.set('ideas', JSON.stringify(ideas), false); }catch(e){} }
+  async function saveConditionsTemplate(){ try{ await window.storage.set('conditionsTemplate', JSON.stringify(conditionsTemplate), false); }catch(e){} }
+  async function saveCustomAssets(){ try{ await window.storage.set('customIdeaAssets', JSON.stringify(customAssets), false); }catch(e){} }
+  async function saveScreenshot(id, dataUrl){ try{ await window.storage.set('idea-screenshot:'+id, dataUrl, false); }catch(e){} }
+  async function getScreenshot(id){ try{ const res = await window.storage.get('idea-screenshot:'+id, false); return res?res.value:null; }catch(e){ return null; } }
+  async function deleteScreenshot(id){ try{ await window.storage.delete('idea-screenshot:'+id, false); }catch(e){} }
+
+  function renderAssetPicker(){
+    const el = document.getElementById('assetPicker'); el.innerHTML='';
+    ASSETS.concat(customAssets).forEach(a=>{
+      const chip = document.createElement('div');
+      chip.className = 'asset-chip' + (a===selectedAsset?' sel':'');
+      chip.textContent = a;
+      chip.addEventListener('click', ()=> selectAsset(a));
+      el.appendChild(chip);
+    });
+    const addChip = document.createElement('div');
+    addChip.className = 'asset-chip asset-chip-add';
+    addChip.textContent = '+';
+    addChip.title = 'Добавить свой актив';
+    addChip.addEventListener('click', ()=>{
+      const addRow = document.getElementById('assetAddRow');
+      addRow.style.display = addRow.style.display==='none' ? 'flex' : 'none';
+      if(addRow.style.display==='flex') document.getElementById('assetAddInput').focus();
+    });
+    el.appendChild(addChip);
+  }
+  async function addCustomAsset(){
+    const input = document.getElementById('assetAddInput');
+    const val = input.value.trim().toUpperCase();
+    if(!val) return;
+    if(!ASSETS.includes(val) && !customAssets.includes(val)){
+      customAssets.push(val);
+      await saveCustomAssets();
+    }
+    input.value='';
+    document.getElementById('assetAddRow').style.display='none';
+    renderAssetPicker();
+    selectAsset(val);
+  }
+  function selectAsset(asset){
+    selectedAsset = asset; currentScreenshot = null;
+    currentConditions = conditionsTemplate.map(t=>({text:t, checked:false}));
+    renderAssetPicker(); renderIdeaForm(); renderAssetHistory();
+  }
+  function renderIdeaForm(){
+    const wrap = document.getElementById('ideaFormWrap');
+    if(!selectedAsset){ wrap.style.display='none'; wrap.innerHTML=''; return; }
+    wrap.style.display='block';
+    wrap.innerHTML = `
+      <div class="idea-form">
+        <div class="idea-form-head"><h3>Новая идея</h3><span class="asset-tag">${selectedAsset}</span></div>
+        <div class="row2">
+          <div class="field"><label for="idea-date">Дата сделки</label><input type="date" id="idea-date" value="${todayStr()}"></div>
+          <div class="field"><label for="idea-link">Ссылка на график (TradingView)</label><input type="url" id="idea-link" placeholder="https://www.tradingview.com/x/..."></div>
+        </div>
+        <div class="field"><label>Скриншот анализа</label>
+          <div class="screenshot-zone" id="screenshotZone" tabindex="0"><div id="screenshotInner">Нажмите, чтобы выбрать файл, или вставьте скриншот из буфера (Ctrl+V), предварительно кликнув сюда</div></div>
+          <input type="file" id="screenshotInput" accept="image/*">
+        </div>
+        <div class="comment-cols">
+          <div class="field"><label for="idea-important">Важные критерии</label><textarea id="idea-important"></textarea></div>
+          <div class="field"><label for="idea-additional">Дополнительно</label><textarea id="idea-additional"></textarea></div>
+        </div>
+        <div class="conditions-box">
+          <div class="section-label" style="font-size:14px">Условия</div>
+          <div class="cond-manage"><input type="text" id="condNewInput" placeholder="Добавить пункт условия..."><button type="button" id="condAddBtn">Добавить</button></div>
+          <div class="cond-template-list" id="condTemplateList"></div>
+          <div id="condCheckListWrap"></div>
+          <div class="idea-open-row"><button type="button" class="submit-btn" id="openTradeBtn" disabled>Открыть сделку</button><span class="cond-progress" id="condProgress"></span></div>
+          <div class="form-msg" id="ideaFormMsg"></div>
+        </div>
+      </div>`;
+    const zone = document.getElementById('screenshotZone');
+    const fileInput = document.getElementById('screenshotInput');
+    zone.addEventListener('click', ()=> fileInput.click());
+    zone.addEventListener('paste', (ev)=>{
+      const items = ev.clipboardData && ev.clipboardData.items;
+      if(!items) return;
+      for(const item of items){ if(item.type.indexOf('image')===0){ readImageFile(item.getAsFile()); ev.preventDefault(); break; } }
+    });
+    fileInput.addEventListener('change', (ev)=>{ if(ev.target.files&&ev.target.files[0]) readImageFile(ev.target.files[0]); });
+    function readImageFile(file){
+      const reader = new FileReader();
+      reader.onload = ()=>{ currentScreenshot=reader.result; document.getElementById('screenshotInner').innerHTML=''; zone.classList.add('has-img'); const img=document.createElement('img'); img.src=currentScreenshot; document.getElementById('screenshotInner').appendChild(img); };
+      reader.readAsDataURL(file);
+    }
+    renderCondTemplateList(); renderCondCheckList();
+    document.getElementById('condAddBtn').addEventListener('click', addConditionTemplateItem);
+    document.getElementById('condNewInput').addEventListener('keydown', (ev)=>{ if(ev.key==='Enter'){ ev.preventDefault(); addConditionTemplateItem(); } });
+    document.getElementById('openTradeBtn').addEventListener('click', saveIdea);
+  }
+  function addConditionTemplateItem(){
+    const input = document.getElementById('condNewInput'); const val = input.value.trim(); if(!val) return;
+    conditionsTemplate.push(val); currentConditions.push({text:val, checked:false});
+    saveConditionsTemplate(); input.value=''; renderCondTemplateList(); renderCondCheckList();
+  }
+  function removeConditionTemplateItem(idx){
+    const text = conditionsTemplate[idx]; conditionsTemplate.splice(idx,1);
+    currentConditions = currentConditions.filter(c=>c.text!==text);
+    saveConditionsTemplate(); renderCondTemplateList(); renderCondCheckList();
+  }
+  function renderCondTemplateList(){
+    const el = document.getElementById('condTemplateList'); if(!el) return;
+    if(conditionsTemplate.length===0){ el.innerHTML = '<div class="cond-empty">Список условий пуст — добавьте пункты выше.</div>'; return; }
+    el.innerHTML='';
+    conditionsTemplate.forEach((t,idx)=>{
+      const item = document.createElement('div'); item.className='cond-template-item';
+      item.innerHTML = `<span>${escapeHtml(t)}</span><button type="button" title="Удалить">×</button>`;
+      item.querySelector('button').addEventListener('click', ()=> removeConditionTemplateItem(idx));
+      el.appendChild(item);
+    });
+  }
+  function renderCondCheckList(){
+    const wrap = document.getElementById('condCheckListWrap'); if(!wrap) return;
+    if(currentConditions.length===0){ wrap.innerHTML=''; updateOpenButtonState(); return; }
+    wrap.innerHTML = '<div class="cond-check-list" id="condCheckList"></div>';
+    const list = document.getElementById('condCheckList');
+    currentConditions.forEach((c,idx)=>{
+      const row = document.createElement('div'); row.className='cond-check-item'+(c.checked?' checked':'');
+      row.innerHTML = `<div class="cond-box">✓</div><div class="cond-text">${escapeHtml(c.text)}</div>`;
+      row.addEventListener('click', ()=>{ currentConditions[idx].checked=!currentConditions[idx].checked; renderCondCheckList(); });
+      list.appendChild(row);
+    });
+    updateOpenButtonState();
+  }
+  function updateOpenButtonState(){
+    const btn = document.getElementById('openTradeBtn'); const prog = document.getElementById('condProgress'); if(!btn) return;
+    const total = currentConditions.length; const done = currentConditions.filter(c=>c.checked).length;
+    prog.textContent = total ? `отмечено ${done} из ${total}` : 'условия не заданы';
+    btn.disabled = total>0 ? done<total : false;
+  }
+  async function saveIdea(){
+    const msg = document.getElementById('ideaFormMsg');
+    const id = 'i_'+Date.now();
+    const idea = { id, asset:selectedAsset, date:document.getElementById('idea-date').value||todayStr(),
+      chartLink:document.getElementById('idea-link').value.trim(), hasScreenshot:!!currentScreenshot,
+      importantNotes:document.getElementById('idea-important').value.trim(), additionalNotes:document.getElementById('idea-additional').value.trim(),
+      conditions: currentConditions.map(c=>({text:c.text, checked:c.checked})), opened:true, createdAt:Date.now() };
+    ideas.push(idea); await saveIdeasList();
+    if(currentScreenshot) await saveScreenshot(id, currentScreenshot);
+    msg.style.color='var(--sage)'; msg.textContent='Сделка открыта, идея сохранена.';
+    selectAsset(selectedAsset); renderAssetHistory(); renderCalendar();
+  }
+  function renderAssetHistory(){
+    const label = document.getElementById('assetHistoryLabel'); const el = document.getElementById('assetIdeaHistory');
+    if(!selectedAsset){ label.style.display='none'; el.innerHTML=''; return; }
+    label.style.display='block'; label.textContent = 'История по активу — '+selectedAsset;
+    const list = ideas.filter(i=>i.asset===selectedAsset).sort((a,b)=>b.createdAt-a.createdAt);
+    if(list.length===0){ el.innerHTML = '<div class="empty-state">Идей по этому активу пока нет.</div>'; return; }
+    el.innerHTML=''; list.forEach(idea=> el.appendChild(buildIdeaCard(idea)));
+  }
+  function buildIdeaCard(idea){
+    const card = document.createElement('div'); card.className='idea-card';
+    const doneCount = idea.conditions.filter(c=>c.checked).length;
+    card.innerHTML = `<div class="idea-card-top"><div class="idea-card-meta"><span class="idea-card-asset">${idea.asset}</span><span class="idea-card-date">${fmtDate(idea.date)}</span></div><span class="idea-card-status ${idea.opened?'opened':''}">${idea.opened?'сделка открыта':'черновик'} · ${doneCount}/${idea.conditions.length} условий</span></div><div class="idea-card-body" id="body-${idea.id}"></div>`;
+    const top = card.querySelector('.idea-card-top'); const body = card.querySelector('.idea-card-body');
+    top.addEventListener('click', async ()=>{
+      const willOpen = !body.classList.contains('open'); body.classList.toggle('open');
+      if(willOpen && body.dataset.loaded!=='1'){
+        body.dataset.loaded='1'; let imgHtml='';
+        if(idea.hasScreenshot){ const dataUrl = await getScreenshot(idea.id); if(dataUrl) imgHtml = `<img src="${dataUrl}" alt="скриншот анализа">`; }
+        const linkHtml = idea.chartLink ? `<div class="notes-block"><div class="k">график</div><div class="v"><a href="${escapeHtml(idea.chartLink)}" target="_blank" rel="noopener">${escapeHtml(idea.chartLink)}</a></div></div>` : '';
+        const condHtml = idea.conditions.length ? '<div class="cond-list-readonly">' + idea.conditions.map(c=>`<div class="${c.checked?'ok':''}">${c.checked?'✓':'—'} ${escapeHtml(c.text)}</div>`).join('') + '</div>' : '';
+        body.innerHTML = `${imgHtml}${linkHtml}${idea.importantNotes?`<div class="notes-block"><div class="k">важные критерии</div><div class="v">${escapeHtml(idea.importantNotes)}</div></div>`:''}${idea.additionalNotes?`<div class="notes-block"><div class="k">дополнительно</div><div class="v">${escapeHtml(idea.additionalNotes)}</div></div>`:''}${condHtml}<button class="link-btn" data-del="${idea.id}">Удалить идею</button>`;
+        body.querySelector('[data-del]').addEventListener('click', async (ev)=>{
+          ev.stopPropagation(); if(!confirm('Удалить эту идею?')) return;
+          ideas = ideas.filter(i=>i.id!==idea.id); await saveIdeasList();
+          if(idea.hasScreenshot) await deleteScreenshot(idea.id);
+          renderAssetHistory(); renderCalendar(); renderCalDayList();
+        });
+      }
+    });
+    return card;
+  }
+  function renderCalendar(){
+    if(calYear===undefined){ const now=new Date(); calYear=now.getFullYear(); calMonth=now.getMonth(); }
+    const label = document.getElementById('calMonthLabel');
+    const monthNames = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+    label.textContent = monthNames[calMonth]+' '+calYear;
+    const grid = document.getElementById('calGrid'); grid.innerHTML='';
+    ['пн','вт','ср','чт','пт','сб','вс'].forEach(d=>{ const dow=document.createElement('div'); dow.className='cal-dow'; dow.textContent=d; grid.appendChild(dow); });
+    const firstDay = new Date(calYear, calMonth, 1);
+    let startOffset = (firstDay.getDay()+6)%7;
+    const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+    const counts = {}; ideas.forEach(i=>{ counts[i.date]=(counts[i.date]||0)+1; });
+    for(let i=0;i<startOffset;i++){ const empty=document.createElement('div'); empty.className='cal-cell empty'; grid.appendChild(empty); }
+    for(let d=1; d<=daysInMonth; d++){
+      const mm=String(calMonth+1).padStart(2,'0'), dd=String(d).padStart(2,'0'), dateStr=`${calYear}-${mm}-${dd}`;
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell'+(counts[dateStr]?' has-ideas':'')+(dateStr===selectedCalDay?' selected':'');
+      cell.innerHTML = `<div class="cal-daynum">${d}</div>${counts[dateStr]?`<div class="cal-count">идеи ${counts[dateStr]}</div>`:''}`;
+      cell.addEventListener('click', ()=>{ selectedCalDay=(selectedCalDay===dateStr)?null:dateStr; renderCalendar(); renderCalDayList(); });
+      grid.appendChild(cell);
+    }
+    renderCalDayList();
+  }
+  function renderCalDayList(){
+    const el = document.getElementById('calDayList'); if(!selectedCalDay){ el.innerHTML=''; return; }
+    const list = ideas.filter(i=>i.date===selectedCalDay).sort((a,b)=>b.createdAt-a.createdAt);
+    if(list.length===0){ el.innerHTML = `<div class="section-label">${fmtDate(selectedCalDay)}</div><div class="empty-state">В этот день идей не создавалось.</div>`; return; }
+    el.innerHTML = `<div class="section-label">${fmtDate(selectedCalDay)} — ${list.length} ${list.length===1?'идея':'идей'}</div>`;
+    list.forEach(idea=> el.appendChild(buildIdeaCard(idea)));
+  }
+  document.getElementById('calPrev').addEventListener('click', ()=>{ calMonth--; if(calMonth<0){calMonth=11; calYear--;} renderCalendar(); });
+  document.getElementById('calNext').addEventListener('click', ()=>{ calMonth++; if(calMonth>11){calMonth=0; calYear++;} renderCalendar(); });
+  loadIdeasData();
+  document.getElementById('assetAddConfirm').addEventListener('click', addCustomAsset);
+  document.getElementById('assetAddInput').addEventListener('keydown', (ev)=>{ if(ev.key==='Enter'){ ev.preventDefault(); addCustomAsset(); } });
+
+  /* ============================================================ JOURNAL TAB ============================================================ */
+  const EMOTIONS = [
+    {id:'calm', label:'Спокойствие', color:'#7fa07a'}, {id:'confident', label:'Уверенность', color:'#b98c53'},
+    {id:'anxious', label:'Тревога', color:'#b1614a'}, {id:'fomo', label:'FOMO', color:'#c98a4a'},
+    {id:'revenge', label:'Желание отыграться', color:'#8c3b2e'}, {id:'bored', label:'Скука', color:'#6b7280'},
+    {id:'greedy', label:'Жадность', color:'#a68a3f'}, {id:'fearful', label:'Страх', color:'#6e5a8c'},
+  ];
+  const EMOTION_MAP = Object.fromEntries(EMOTIONS.map(e=>[e.id,e]));
+  const TAGS = ['Отыгрыш убытка','FOMO-вход','Следовал плану','Увеличенный объём','Погнался за ценой','Рано закрыл прибыль','Долго держал убыток','Дисциплинированный выход'];
+  const EMOJI_MAP = {red:{icon:'😠',val:1,color:'#b1614a'}, yellow:{icon:'😐',val:2,color:'#c9a13b'}, green:{icon:'😊',val:3,color:'#7fa07a'}};
+
+  let accounts = [], journalTrades = [], quickCount = 0;
+  let selectedPosition=null, selectedEntryType=null, selectedResult=null, selectedPreEmoji=null;
+  let balanceChartInstance=null, emotionChartInstance=null, emoGranularity='day';
+  let jCalYear, jCalMonth, jSelectedCalDay=null, jCalAccountFilter='';
+
+  async function loadJournalData(){
+    try{ const r=await window.storage.get('accounts', false); accounts = r&&r.value?JSON.parse(r.value):[]; }catch(e){ accounts=[]; }
+    try{ const r=await window.storage.get('journalTrades', false); journalTrades = r&&r.value?JSON.parse(r.value):[]; }catch(e){ journalTrades=[]; }
+    try{ const r=await window.storage.get('quickCount', false); quickCount = r&&r.value?parseInt(r.value):0; }catch(e){ quickCount=0; }
+    document.getElementById('quickCount').textContent = quickCount;
+    renderAccounts(); renderAccountSelects(); renderTradesLedger(); renderBalanceChart(); renderEmotionChart(); renderJCalendar();
+    if(typeof renderAttention==='function') renderAttention();
+  }
+  async function saveAccounts(){ try{ await window.storage.set('accounts', JSON.stringify(accounts), false); }catch(e){} }
+  async function saveJournalTrades(){ try{ await window.storage.set('journalTrades', JSON.stringify(journalTrades), false); }catch(e){} }
+  async function saveQuickCount(){ try{ await window.storage.set('quickCount', String(quickCount), false); }catch(e){} }
+
+  document.getElementById('quickPlusBtn').addEventListener('click', async ()=>{
+    quickCount++; document.getElementById('quickCount').textContent = quickCount;
+    await saveQuickCount();
+  });
+
+  function renderAccounts(){
+    const el = document.getElementById('accountsList'); el.innerHTML='';
+    if(accounts.length===0){ el.innerHTML='<div class="empty-state" style="border-top:none;padding:0 0 14px">Счетов пока нет — создайте первый ниже.</div>'; return; }
+    accounts.forEach(acc=>{
+      const balance = runningBalance(acc.id);
+      const pill = document.createElement('div'); pill.className='account-pill'+(acc.blown?' blown':'');
+      pill.innerHTML = `<b>${escapeHtml(acc.propFirm)}</b><span>${fmtMoney(balance-acc.size)!=='+0.00'? balance.toLocaleString('ru-RU',{minimumFractionDigits:2}) : acc.size.toLocaleString('ru-RU',{minimumFractionDigits:2})}</span>${acc.blown?'<span>слит</span>':''}<button data-toggle="${acc.id}" title="Отметить слитым">⚑</button><button data-del="${acc.id}" title="Удалить счёт">×</button>`;
+      pill.querySelector('[data-toggle]').addEventListener('click', async ()=>{ acc.blown=!acc.blown; await saveAccounts(); renderAccounts(); renderStats(); });
+      pill.querySelector('[data-del]').addEventListener('click', async ()=>{
+        if(!confirm('Удалить счёт вместе со всеми его сделками?')) return;
+        journalTrades = journalTrades.filter(t=>t.accountId!==acc.id);
+        accounts = accounts.filter(a=>a.id!==acc.id);
+        await saveAccounts(); await saveJournalTrades();
+        renderAccounts(); renderAccountSelects(); renderTradesLedger(); renderBalanceChart(); renderJCalendar();
+      });
+      el.appendChild(pill);
+    });
+  }
+  function runningBalance(accountId){
+    const acc = accounts.find(a=>a.id===accountId); if(!acc) return 0;
+    const trades = journalTrades.filter(t=>t.accountId===accountId).sort((a,b)=>a.createdAt-b.createdAt);
+    return acc.size + trades.reduce((s,t)=>s+t.profit,0);
+  }
+
+  document.getElementById('accountForm').addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+    const acc = { id:'acc_'+Date.now(), propFirm:document.getElementById('acc-firm').value.trim(),
+      size: parseFloat(document.getElementById('acc-size').value)||0,
+      maxDrawdown: parseFloat(document.getElementById('acc-dd').value)||null,
+      dll: parseFloat(document.getElementById('acc-dll').value)||null,
+      blown:false, createdAt:Date.now() };
+    accounts.push(acc); await saveAccounts();
+    ev.target.reset();
+    renderAccounts(); renderAccountSelects();
+  });
+
+  function renderAccountSelects(){
+    [document.getElementById('t-account'), document.getElementById('filterAccount'), document.getElementById('balanceAccountSelect'), document.getElementById('jCalAccountSelect')].forEach((sel,idx)=>{
+      const keepFirst = idx>0;
+      const currentVal = sel.value;
+      sel.innerHTML = keepFirst ? (idx===2? '' : (idx===3? '<option value="">Все счета</option>' : '<option value="">Все счета</option>')) : '';
+      accounts.forEach(acc=>{
+        const opt=document.createElement('option'); opt.value=acc.id; opt.textContent=acc.propFirm+' ('+acc.size.toLocaleString('ru-RU')+')';
+        sel.appendChild(opt);
+      });
+      if(accounts.some(a=>a.id===currentVal)) sel.value=currentVal;
+    });
+  }
+  document.getElementById('t-asset').addEventListener('change', (ev)=>{
+    document.getElementById('t-asset-other-wrap').style.display = ev.target.value==='other' ? 'block' : 'none';
+  });
+
+  // toggles
+  function setupToggle(containerId, setter, classAdd){
+    const container = document.getElementById(containerId);
+    container.addEventListener('click', (ev)=>{
+      if(ev.target.tagName!=='BUTTON') return;
+      container.querySelectorAll('button').forEach(b=>b.classList.remove('sel'));
+      ev.target.classList.add('sel');
+      setter(ev.target.dataset.v);
+      updateProfitPreview();
+    });
+  }
+  setupToggle('t-position', v=>selectedPosition=v);
+  setupToggle('t-entry', v=>selectedEntryType=v);
+  setupToggle('t-result', v=>selectedResult=v);
+  document.getElementById('t-preemoji').addEventListener('click', (ev)=>{
+    if(ev.target.tagName!=='BUTTON') return;
+    document.querySelectorAll('#t-preemoji .emoji-btn').forEach(b=>b.classList.remove('sel'));
+    ev.target.classList.add('sel'); selectedPreEmoji = ev.target.dataset.v;
+  });
+
+  function buildEmotionChips(container){
+    container.innerHTML='';
+    EMOTIONS.forEach(e=>{
+      const chip=document.createElement('div'); chip.className='chip'; chip.dataset.val=e.id;
+      chip.innerHTML = '<span class="dot" style="background:'+e.color+'"></span>'+e.label;
+      chip.addEventListener('click', ()=>{ container.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel')); chip.classList.add('sel'); container.dataset.selected=e.id; });
+      container.appendChild(chip);
+    });
+  }
+  buildEmotionChips(document.getElementById('t-afteremo'));
+  const tTags = document.getElementById('t-tags');
+  TAGS.forEach(t=>{ const chip=document.createElement('div'); chip.className='chip'; chip.textContent=t; chip.addEventListener('click', ()=>chip.classList.toggle('sel')); tTags.appendChild(chip); });
+
+  function currentRiskAmount(){
+    const accId = document.getElementById('t-account').value;
+    const acc = accounts.find(a=>a.id===accId);
+    const riskPct = parseFloat(document.getElementById('t-risk').value)||0;
+    if(!acc) return 0;
+    return acc.size * (riskPct/100);
+  }
+  function computeProfit(){
+    const riskAmount = currentRiskAmount();
+    const rr = parseFloat(document.getElementById('t-rr').value)||0;
+    if(selectedResult==='TP') return riskAmount*rr;
+    if(selectedResult==='SL') return -riskAmount;
+    return 0;
+  }
+  function updateProfitPreview(){
+    document.getElementById('t-profit-preview').value = selectedResult ? fmtMoney(computeProfit()) : '';
+  }
+  ['t-account','t-risk','t-rr'].forEach(id=> document.getElementById(id).addEventListener('input', updateProfitPreview));
+  document.getElementById('t-date').value = todayStr();
+
+  document.getElementById('tradeForm').addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+    const msg = document.getElementById('tradeFormMsg');
+    const accountId = document.getElementById('t-account').value;
+    if(!accountId){ msg.style.color='var(--brick)'; msg.textContent='Сначала создайте и выберите счёт.'; return; }
+    if(!selectedPosition){ msg.style.color='var(--brick)'; msg.textContent='Выберите позицию LONG/SHORT.'; return; }
+    if(!selectedEntryType){ msg.style.color='var(--brick)'; msg.textContent='Выберите тип входа.'; return; }
+    if(!selectedResult){ msg.style.color='var(--brick)'; msg.textContent='Отметьте результат TP/SL.'; return; }
+    if(!selectedPreEmoji){ msg.style.color='var(--brick)'; msg.textContent='Отметьте состояние перед входом.'; return; }
+
+    let asset = document.getElementById('t-asset').value;
+    if(asset==='other') asset = document.getElementById('t-asset-other').value.trim() || 'Другой';
+
+    const trade = {
+      id:'jt_'+Date.now(), createdAt:Date.now(),
+      date: document.getElementById('t-date').value, session: document.getElementById('t-session').value||null,
+      accountId, asset, strategy: document.getElementById('t-strategy').value.trim(),
+      position: selectedPosition, entryType: selectedEntryType,
+      riskPercent: parseFloat(document.getElementById('t-risk').value)||0,
+      rr: parseFloat(document.getElementById('t-rr').value)||0,
+      result: selectedResult, profit: computeProfit(),
+      preEmoji: selectedPreEmoji,
+      afterEmotion: document.getElementById('t-afteremo').dataset.selected || null,
+      tags: [...tTags.querySelectorAll('.chip.sel')].map(c=>c.textContent),
+      notes: document.getElementById('t-notes').value.trim(),
+    };
+    journalTrades.push(trade); await saveJournalTrades();
+
+    msg.style.color='var(--sage)'; msg.textContent='Сделка записана.';
+    ev.target.reset();
+    document.getElementById('t-date').value = todayStr();
+    document.getElementById('t-asset-other-wrap').style.display='none';
+    document.getElementById('t-profit-preview').value='';
+    selectedPosition=null; selectedEntryType=null; selectedResult=null; selectedPreEmoji=null;
+    document.querySelectorAll('#t-position button,#t-entry button,#t-result button,#t-preemoji button').forEach(b=>b.classList.remove('sel'));
+    document.getElementById('t-afteremo').querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));
+    delete document.getElementById('t-afteremo').dataset.selected;
+    tTags.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));
+
+    renderAccounts(); renderTradesLedger(); renderBalanceChart(); renderEmotionChart(); renderJCalendar();
+    setTimeout(()=>{ msg.textContent=''; }, 2500);
+  });
+
+  document.getElementById('filterAccount').addEventListener('change', renderTradesLedger);
+  document.getElementById('filterResult2').addEventListener('change', renderTradesLedger);
+
+  function renderTradesLedger(){
+    const el = document.getElementById('tradesLedger');
+    let list = [...journalTrades].sort((a,b)=>b.createdAt-a.createdAt);
+    const fAcc = document.getElementById('filterAccount').value;
+    const fRes = document.getElementById('filterResult2').value;
+    if(fAcc) list = list.filter(t=>t.accountId===fAcc);
+    if(fRes) list = list.filter(t=>t.result===fRes);
+    if(journalTrades.length===0){ el.className='empty-state'; el.innerHTML='<span class="lead">Сделок пока нет.</span>Заполните форму выше.'; return; }
+    if(list.length===0){ el.className='empty-state'; el.innerHTML='Нет сделок под выбранные фильтры.'; return; }
+    el.className='ledger'; el.innerHTML='';
+    list.forEach(t=>{
+      const acc = accounts.find(a=>a.id===t.accountId);
+      const emo = EMOJI_MAP[t.preEmoji];
+      const row = document.createElement('div'); row.className='ledger-row';
+      row.innerHTML = `<span class="emoji">${emo?emo.icon:''}</span>
+        <div class="col-date">${fmtDate(t.date)}</div>
+        <div class="col-acc">${acc?escapeHtml(acc.propFirm):'—'}</div>
+        <div class="col-symbol">${escapeHtml(t.asset)}</div>
+        <div class="col-dir">${t.position==='LONG'?'лонг':'шорт'}</div>
+        <div class="col-mid">${t.strategy?escapeHtml(t.strategy)+' · ':''}${t.result}${t.session?' · '+t.session:''}</div>
+        <div class="col-pnl ${t.profit>=0?'pos':'neg'}">${fmtMoney(t.profit)}</div>`;
+      const detail = document.createElement('div'); detail.className='ledger-detail';
+      detail.innerHTML = `<div class="detail-grid">
+          <div class="detail-item"><div class="k">риск</div><div class="v">${t.riskPercent}%</div></div>
+          <div class="detail-item"><div class="k">RR</div><div class="v">${t.rr}</div></div>
+          <div class="detail-item"><div class="k">вход</div><div class="v">${t.entryType}</div></div>
+          <div class="detail-item"><div class="k">после сделки</div><div class="v">${t.afterEmotion?EMOTION_MAP[t.afterEmotion].label:'—'}</div></div>
+        </div>
+        ${t.tags&&t.tags.length? '<div class="detail-tags">'+t.tags.map(tag=>'<span class="tag-chip">'+escapeHtml(tag)+'</span>').join('')+'</div>':''}
+        ${t.notes? '<div class="detail-notes">'+escapeHtml(t.notes)+'</div>':''}
+        <div style="margin-top:12px"><button class="link-btn" data-del="${t.id}">Удалить сделку</button></div>`;
+      row.addEventListener('click', ()=> detail.classList.toggle('open'));
+      el.appendChild(row); el.appendChild(detail);
+    });
+    el.querySelectorAll('[data-del]').forEach(btn=>{
+      btn.addEventListener('click', async (ev)=>{
+        ev.stopPropagation(); if(!confirm('Удалить эту сделку?')) return;
+        journalTrades = journalTrades.filter(t=>t.id!==btn.dataset.del);
+        await saveJournalTrades();
+        renderAccounts(); renderTradesLedger(); renderBalanceChart(); renderEmotionChart(); renderJCalendar();
+      });
+    });
+  }
+
+  /* ---------- balance chart ---------- */
+  document.getElementById('balanceAccountSelect').addEventListener('change', renderBalanceChart);
+  function renderBalanceChart(){
+    const canvas = document.getElementById('balanceChart');
+    const accId = document.getElementById('balanceAccountSelect').value || (accounts[0] && accounts[0].id);
+    if(balanceChartInstance){ balanceChartInstance.destroy(); balanceChartInstance=null; }
+    if(!accId){ return; }
+    const acc = accounts.find(a=>a.id===accId); if(!acc) return;
+    const trades = journalTrades.filter(t=>t.accountId===accId).sort((a,b)=>a.createdAt-b.createdAt);
+    const labels = ['старт']; const data = [acc.size]; let running = acc.size;
+    trades.forEach((t,idx)=>{ running += t.profit; labels.push('#'+(idx+1)); data.push(running); });
+    balanceChartInstance = new Chart(canvas, {
+      type:'line',
+      data:{ labels, datasets:[{ data, borderColor:'#b98c53', backgroundColor:'rgba(185,140,83,0.12)', fill:true, tension:0.25, pointRadius:2 }] },
+      options:{ plugins:{legend:{display:false}}, scales:{ x:{ ticks:{color:'#a9a494', font:{family:'monospace',size:10}}, grid:{color:'#333d4c'} }, y:{ ticks:{color:'#a9a494', font:{family:'monospace',size:10}}, grid:{color:'#333d4c'} } } }
+    });
+  }
+
+  /* ---------- emotion chart ---------- */
+  document.getElementById('emoGranularity').addEventListener('click', (ev)=>{
+    if(ev.target.tagName!=='BUTTON') return;
+    document.querySelectorAll('#emoGranularity button').forEach(b=>b.classList.remove('sel'));
+    ev.target.classList.add('sel'); emoGranularity = ev.target.dataset.g; renderEmotionChart();
+  });
+  function emoColorForValue(v){
+    // 1 -> red, 2 -> amber, 3 -> green, interpolate
+    if(v<=1.5){ const t=(v-1)/0.5; return lerpColor('#b1614a','#c9a13b', Math.max(0,Math.min(1,t))); }
+    const t=(v-1.5)/1.5; return lerpColor('#c9a13b','#7fa07a', Math.max(0,Math.min(1,t)));
+  }
+  function lerpColor(a,b,t){
+    const pa=hexToRgb(a), pb=hexToRgb(b);
+    const r=Math.round(pa.r+(pb.r-pa.r)*t), g=Math.round(pa.g+(pb.g-pa.g)*t), bl=Math.round(pa.b+(pb.b-pa.b)*t);
+    return `rgb(${r},${g},${bl})`;
+  }
+  function hexToRgb(h){ const v=parseInt(h.slice(1),16); return {r:(v>>16)&255, g:(v>>8)&255, b:v&255}; }
+
+  function renderEmotionChart(){
+    const canvas = document.getElementById('emotionChart');
+    if(emotionChartInstance){ emotionChartInstance.destroy(); emotionChartInstance=null; }
+    const withEmoji = journalTrades.filter(t=>t.preEmoji);
+    if(withEmoji.length===0) return;
+    const keyFn = emoGranularity==='day' ? (t)=>t.date : emoGranularity==='week' ? (t)=>isoWeek(t.date) : (t)=>monthKey(t.date);
+    const groups = {};
+    withEmoji.forEach(t=>{ const k=keyFn(t); groups[k]=groups[k]||[]; groups[k].push(EMOJI_MAP[t.preEmoji].val); });
+    const keys = Object.keys(groups).sort();
+    const values = keys.map(k=> groups[k].reduce((s,v)=>s+v,0)/groups[k].length );
+    // simple moving average (window 3)
+    const win = 3;
+    const smoothed = values.map((_,i)=>{
+      const start = Math.max(0,i-win+1);
+      const slice = values.slice(start,i+1);
+      return slice.reduce((s,v)=>s+v,0)/slice.length;
+    });
+    emotionChartInstance = new Chart(canvas, {
+      type:'line',
+      data:{ labels:keys, datasets:[{ data:smoothed, borderWidth:3, pointRadius:3,
+        segment:{ borderColor: ctx => emoColorForValue((ctx.p0.parsed.y+ctx.p1.parsed.y)/2) },
+        pointBackgroundColor: ctx => emoColorForValue(ctx.parsed ? ctx.parsed.y : 2),
+        tension:0.3 }] },
+      options:{ plugins:{legend:{display:false}},
+        scales:{ x:{ ticks:{color:'#a9a494', font:{family:'monospace',size:10}}, grid:{color:'#333d4c'} },
+                 y:{ min:1, max:3, ticks:{ color:'#a9a494', font:{family:'monospace',size:10}, callback:(v)=> v===1?'ДНО':v===2?'РУТИНА':v===3?'ЭЙФОРИЯ':'' }, grid:{color:'#333d4c'} } } }
+    });
+  }
+
+  /* ---------- journal calendar (daily P&L) ---------- */
+  document.getElementById('jCalAccountSelect').addEventListener('change', (ev)=>{ jCalAccountFilter = ev.target.value; renderJCalendar(); });
+  function renderJCalendar(){
+    if(jCalYear===undefined){ const now=new Date(); jCalYear=now.getFullYear(); jCalMonth=now.getMonth(); }
+    const label = document.getElementById('jCalMonthLabel');
+    const monthNames = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+    label.textContent = monthNames[jCalMonth]+' '+jCalYear;
+    const grid = document.getElementById('jCalGrid'); grid.innerHTML='';
+    ['пн','вт','ср','чт','пт','сб','вс'].forEach(d=>{ const dow=document.createElement('div'); dow.className='cal-dow'; dow.textContent=d; grid.appendChild(dow); });
+    const firstDay = new Date(jCalYear, jCalMonth, 1);
+    let startOffset = (firstDay.getDay()+6)%7;
+    const daysInMonth = new Date(jCalYear, jCalMonth+1, 0).getDate();
+    const relevantTrades = jCalAccountFilter ? journalTrades.filter(t=>t.accountId===jCalAccountFilter) : journalTrades;
+    const pnlByDate = {};
+    relevantTrades.forEach(t=>{ pnlByDate[t.date] = (pnlByDate[t.date]||0) + t.profit; });
+    for(let i=0;i<startOffset;i++){ const empty=document.createElement('div'); empty.className='cal-cell empty'; grid.appendChild(empty); }
+    for(let d=1; d<=daysInMonth; d++){
+      const mm=String(jCalMonth+1).padStart(2,'0'), dd=String(d).padStart(2,'0'), dateStr=`${jCalYear}-${mm}-${dd}`;
+      const pnl = pnlByDate[dateStr];
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell'+(pnl!=null?(pnl>=0?' has-pos':' has-neg'):'')+(dateStr===jSelectedCalDay?' selected':'');
+      cell.innerHTML = `<div class="cal-daynum">${d}</div>${pnl!=null?`<div class="cal-pnl ${pnl>=0?'pos':'neg'}">${fmtMoney(pnl)}</div>`:''}`;
+      cell.addEventListener('click', ()=>{ jSelectedCalDay=(jSelectedCalDay===dateStr)?null:dateStr; renderJCalendar(); renderJCalDayList(); });
+      grid.appendChild(cell);
+    }
+    renderJCalDayList();
+  }
+  function renderJCalDayList(){
+    const el = document.getElementById('jCalDayList'); if(!jSelectedCalDay){ el.innerHTML=''; return; }
+    const relevantTrades = jCalAccountFilter ? journalTrades.filter(t=>t.accountId===jCalAccountFilter) : journalTrades;
+    const list = relevantTrades.filter(t=>t.date===jSelectedCalDay).sort((a,b)=>b.createdAt-a.createdAt);
+    const total = list.reduce((s,t)=>s+t.profit,0);
+    if(list.length===0){ el.innerHTML = `<div class="section-label">${fmtDate(jSelectedCalDay)}</div><div class="empty-state">В этот день сделок не было.</div>`; return; }
+    el.innerHTML = `<div class="section-label">${fmtDate(jSelectedCalDay)} — результат дня: <span style="color:${total>=0?'var(--sage)':'var(--brick)'}">${fmtMoney(total)}</span></div><div class="ledger" id="jDayLedger"></div>`;
+    const ledger = document.getElementById('jDayLedger');
+    list.forEach(t=>{
+      const acc = accounts.find(a=>a.id===t.accountId); const emo = EMOJI_MAP[t.preEmoji];
+      const row = document.createElement('div'); row.className='ledger-row';
+      row.innerHTML = `<span class="emoji">${emo?emo.icon:''}</span><div class="col-acc">${acc?escapeHtml(acc.propFirm):'—'}</div><div class="col-symbol">${escapeHtml(t.asset)}</div><div class="col-dir">${t.position==='LONG'?'лонг':'шорт'}</div><div class="col-mid">${t.result}</div><div class="col-pnl ${t.profit>=0?'pos':'neg'}">${fmtMoney(t.profit)}</div>`;
+      ledger.appendChild(row);
+    });
+  }
+  document.getElementById('jCalPrev').addEventListener('click', ()=>{ jCalMonth--; if(jCalMonth<0){jCalMonth=11; jCalYear--;} renderJCalendar(); });
+  document.getElementById('jCalNext').addEventListener('click', ()=>{ jCalMonth++; if(jCalMonth>11){jCalMonth=0; jCalYear++;} renderJCalendar(); });
+
+  loadJournalData();
+
+  /* ============================================================ STATISTICS TAB ============================================================ */
+  function dayZone(avg){ if(avg<=1.5) return 'ДНО'; if(avg<=2.5) return 'РУТИНА'; return 'ЭЙФОРИЯ'; }
+
+  function renderStats(){
+    const el = document.getElementById('statsContent');
+    el.className='';
+
+    const byDate = {};
+    journalTrades.forEach(t=>{ byDate[t.date]=byDate[t.date]||[]; byDate[t.date].push(t); });
+    const dateKeys = Object.keys(byDate);
+    const dayPnl = {}; dateKeys.forEach(d=> dayPnl[d]=byDate[d].reduce((s,t)=>s+t.profit,0));
+    const profitableDays = dateKeys.filter(d=>dayPnl[d]>0).length;
+    const losingDays = dateKeys.filter(d=>dayPnl[d]<0).length;
+
+    const totalTrades = journalTrades.length;
+    const winTrades = journalTrades.filter(t=>t.result==='TP').length;
+    const lossTrades = journalTrades.filter(t=>t.result==='SL').length;
+    const winRate = totalTrades ? Math.round((winTrades/totalTrades)*100) : 0;
+    const avgRR = totalTrades ? (journalTrades.reduce((s,t)=>s+(t.rr||0),0)/totalTrades).toFixed(2) : '0.00';
+
+    let bestDay=null, worstDay=null;
+    dateKeys.forEach(d=>{ if(bestDay===null||dayPnl[d]>dayPnl[bestDay]) bestDay=d; if(worstDay===null||dayPnl[d]<dayPnl[worstDay]) worstDay=d; });
+
+    const bySession = {};
+    journalTrades.forEach(t=>{ if(t.session){ bySession[t.session]=(bySession[t.session]||0)+t.profit; } });
+    let bestSession=null, worstSession=null;
+    Object.keys(bySession).forEach(s=>{ if(bestSession===null||bySession[s]>bySession[bestSession]) bestSession=s; if(worstSession===null||bySession[s]<bySession[worstSession]) worstSession=s; });
+
+    const byAsset = {};
+    journalTrades.forEach(t=>{ byAsset[t.asset]=(byAsset[t.asset]||0)+t.profit; });
+    let bestAsset=null, worstAsset=null;
+    Object.keys(byAsset).forEach(a=>{ if(bestAsset===null||byAsset[a]>byAsset[bestAsset]) bestAsset=a; if(worstAsset===null||byAsset[a]<byAsset[worstAsset]) worstAsset=a; });
+
+    // day emotion zones
+    let euphoriaDays=0, dnoDays=0, rutinaDays=0;
+    dateKeys.forEach(d=>{
+      const withEmoji = byDate[d].filter(t=>t.preEmoji);
+      if(withEmoji.length===0) return;
+      const avg = withEmoji.reduce((s,t)=>s+EMOJI_MAP[t.preEmoji].val,0)/withEmoji.length;
+      const zone = dayZone(avg);
+      if(zone==='ЭЙФОРИЯ') euphoriaDays++; else if(zone==='ДНО') dnoDays++; else rutinaDays++;
+    });
+    const tiltTrades = journalTrades.filter(t=>t.preEmoji==='red').length;
+
+    const blownAccounts = accounts.filter(a=>a.blown).length;
+
+    function card(val,label,cls){ return `<div class="stat-card ${cls||''}"><div class="v">${val}</div><div class="k">${label}</div></div>`; }
+
+    el.innerHTML = `
+      <div class="stat-grid">
+        ${card(dateKeys.length,'торговых дней')}
+        ${card(profitableDays,'прибыльных дней','pos')}
+        ${card(losingDays,'убыточных дней','neg')}
+        ${card(accounts.length+' (слито: '+blownAccounts+')','аккаунтов')}
+        ${card(totalTrades,'всего сделок')}
+        ${card(winTrades,'прибыльных сделок','pos')}
+        ${card(lossTrades,'убыточных сделок','neg')}
+        ${card(winRate+'%','средний winrate')}
+        ${card(avgRR,'средний RR')}
+        ${card(bestDay?fmtDate(bestDay)+' ('+fmtMoney(dayPnl[bestDay])+')':'—','лучший день')}
+        ${card(worstDay?fmtDate(worstDay)+' ('+fmtMoney(dayPnl[worstDay])+')':'—','худший день')}
+        ${card(bestSession||'—','лучшая сессия')}
+        ${card(worstSession||'—','худшая сессия')}
+        ${card(bestAsset||'—','лучший актив')}
+        ${card(worstAsset||'—','худший актив')}
+        ${card(euphoriaDays,'дней ЭЙФОРИИ')}
+        ${card(dnoDays,'дней ДНО','neg')}
+        ${card(rutinaDays,'дней РУТИНЫ')}
+        ${card(tiltTrades,'сделок в ТИЛЬТе','neg')}
+        ${card(quickCount,'быстрых сделок без критериев («+»)','neg')}
+      </div>
+      <div class="stat-footnote">Тильт определяется как сделки, открытые с отметкой «негативное состояние» (красный смайлик). Дни ДНО / РУТИНА / ЭЙФОРИЯ — по среднему состоянию перед входом за день (≤1.5 / 1.5–2.5 / >2.5 по шкале эмодзи).</div>
+    `;
+  }
+  renderStats();
+
+  /* ============================================================ PROFILE (ЛИЧНЫЙ КАБИНЕТ) ============================================================ */
+  let profile = {name:'', age:'', concept:''};
+  let courses = [];
+  let studyLinks = [];
+
+  async function loadProfileData(){
+    try{ const r=await window.storage.get('profile', false); profile = r&&r.value?JSON.parse(r.value):{name:'',age:'',concept:''}; }catch(e){}
+    try{ const r=await window.storage.get('courses', false); courses = r&&r.value?JSON.parse(r.value):[]; }catch(e){ courses=[]; }
+    try{ const r=await window.storage.get('studyLinks', false); studyLinks = r&&r.value?JSON.parse(r.value):[]; }catch(e){ studyLinks=[]; }
+    document.getElementById('pr-name').value = profile.name||'';
+    document.getElementById('pr-age').value = profile.age||'';
+    document.getElementById('pr-concept').value = profile.concept||'';
+    renderGreeting();
+    renderCourses();
+    renderStudyLinks();
+  }
+  async function saveProfile(){ try{ await window.storage.set('profile', JSON.stringify(profile), false); }catch(e){} }
+  async function saveCourses(){ try{ await window.storage.set('courses', JSON.stringify(courses), false); }catch(e){} }
+  async function saveStudyLinks(){ try{ await window.storage.set('studyLinks', JSON.stringify(studyLinks), false); }catch(e){} }
+
+  function renderGreeting(){
+    const el = document.getElementById('homeGreeting');
+    el.textContent = profile.name ? ('Здравствуйте, '+profile.name) : 'Здравствуйте';
+  }
+
+  document.getElementById('profileForm').addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+    profile = { name:document.getElementById('pr-name').value.trim(), age:document.getElementById('pr-age').value, concept:document.getElementById('pr-concept').value.trim() };
+    await saveProfile();
+    document.getElementById('profileMsg').style.color='var(--sage)';
+    document.getElementById('profileMsg').textContent='Сохранено.';
+    renderGreeting();
+    setTimeout(()=>{ document.getElementById('profileMsg').textContent=''; },2000);
+  });
+
+  function renderCourses(){
+    const el = document.getElementById('coursesList');
+    if(courses.length===0){ el.innerHTML='<div class="empty-state" style="border-top:none;padding:0 0 10px">Обучений пока не добавлено.</div>'; document.getElementById('coursesTotalCaption').textContent=''; return; }
+    el.innerHTML='';
+    let total=0;
+    courses.forEach(c=>{
+      total += (c.cost||0);
+      const row = document.createElement('div'); row.className='option-row';
+      row.innerHTML = `<div class="opt-underlying" style="width:auto;flex:1">${escapeHtml(c.name)}</div><div class="opt-strike">${c.cost?c.cost.toLocaleString('ru-RU',{minimumFractionDigits:2}):'—'}</div><button class="link-btn" data-del="${c.id}">удалить</button>`;
+      row.querySelector('[data-del]').addEventListener('click', async ()=>{ courses = courses.filter(x=>x.id!==c.id); await saveCourses(); renderCourses(); });
+      el.appendChild(row);
+    });
+    document.getElementById('coursesTotalCaption').textContent = 'Всего вложено в обучение: '+total.toLocaleString('ru-RU',{minimumFractionDigits:2});
+  }
+  document.getElementById('courseForm').addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+    courses.push({ id:'c_'+Date.now(), name:document.getElementById('course-name').value.trim(), cost:parseFloat(document.getElementById('course-cost').value)||0 });
+    await saveCourses(); ev.target.reset(); renderCourses();
+  });
+
+  function renderStudyLinks(){
+    const el = document.getElementById('linksList');
+    if(studyLinks.length===0){ el.innerHTML='<div class="empty-state" style="border-top:none;padding:0">Ссылок пока нет.</div>'; return; }
+    el.innerHTML='';
+    studyLinks.forEach(l=>{
+      const row = document.createElement('div'); row.className='option-row';
+      row.innerHTML = `<div class="opt-underlying" style="width:auto;flex:1"><a href="${escapeHtml(l.url)}" target="_blank" rel="noopener">${escapeHtml(l.label)}</a></div><button class="link-btn" data-del="${l.id}">удалить</button>`;
+      row.querySelector('[data-del]').addEventListener('click', async ()=>{ studyLinks = studyLinks.filter(x=>x.id!==l.id); await saveStudyLinks(); renderStudyLinks(); });
+      el.appendChild(row);
+    });
+  }
+  document.getElementById('linkForm').addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+    studyLinks.push({ id:'l_'+Date.now(), label:document.getElementById('link-label').value.trim(), url:document.getElementById('link-url').value.trim() });
+    await saveStudyLinks(); ev.target.reset(); renderStudyLinks();
+  });
+
+  loadProfileData();
+
+  /* ============================================================ HOME PAGE ============================================================ */
+
+  /* ---------- mood ---------- */
+  let moodToday = null; // {date, start, current}
+  async function loadMood(){
+    try{ const r=await window.storage.get('moodToday', false); moodToday = r&&r.value?JSON.parse(r.value):null; }catch(e){ moodToday=null; }
+    if(moodToday && moodToday.date!==todayStr()) moodToday=null; // reset each new day
+    renderMoodScale();
+  }
+  async function saveMood(){ try{ await window.storage.set('moodToday', JSON.stringify(moodToday), false); }catch(e){} }
+  function moodColor(v){
+    // v in [1,3] -> red..purple..green
+    if(v<=2){ const t=(v-1)/1; return lerpColor('#b1614a','#8c5b8c', Math.max(0,Math.min(1,t))); }
+    const t=(v-2)/1; return lerpColor('#8c5b8c','#7fa07a', Math.max(0,Math.min(1,t)));
+  }
+  document.getElementById('moodEmojis').addEventListener('click', async (ev)=>{
+    if(ev.target.tagName!=='BUTTON') return;
+    const val = parseFloat(ev.target.dataset.v);
+    document.querySelectorAll('#moodEmojis .emoji-btn').forEach(b=>b.classList.remove('sel'));
+    ev.target.classList.add('sel');
+    if(!moodToday){ moodToday = {date:todayStr(), start:val, current:val}; }
+    else{ moodToday.current = val; }
+    await saveMood();
+    renderMoodScale();
+  });
+  function renderMoodScale(){
+    const startM = document.getElementById('moodMarkerStart');
+    const curM = document.getElementById('moodMarkerCurrent');
+    const caption = document.getElementById('moodScaleCaption');
+    if(!moodToday){ startM.style.display='none'; curM.style.display='none'; caption.textContent='Отметьте состояние — начальный уровень дня зафиксируется, а дальнейшие отметки будут сравниваться с ним.'; return; }
+    const pct = (v)=> ((v-1)/2*100)+'%';
+    startM.style.display='block'; startM.style.left = pct(moodToday.start);
+    curM.style.display='block'; curM.style.left = pct(moodToday.current);
+    curM.style.background = moodColor(moodToday.current);
+    if(moodToday.current===moodToday.start){ caption.textContent='Начальный уровень дня зафиксирован.'; }
+    else if(moodToday.current>moodToday.start){ caption.textContent='Состояние улучшилось по сравнению с началом дня (серая метка — начало, светлая — сейчас).'; }
+    else{ caption.textContent='Состояние снизилось по сравнению с началом дня (серая метка — начало, светлая — сейчас).'; }
+  }
+  loadMood();
+
+  /* ---------- market overview widgets ---------- */
+  (function initMarketOverview(){
+    const grid = document.getElementById('marketOverviewGrid');
+    const symbols = [
+      {s:'OANDA:XAUUSD', t:'Золото'}, {s:'OANDA:XAGUSD', t:'Серебро'}, {s:'OANDA:EURUSD', t:'EUR/USD'},
+      {s:'CAPITALCOM:US500', t:'S&P 500'}, {s:'CAPITALCOM:US100', t:'Nasdaq (NQ)'}, {s:'XETR:DAX', t:'DAX 40'}
+    ];
+    symbols.forEach(item=>{
+      const cell = document.createElement('div'); cell.className='market-overview-cell';
+      const container = document.createElement('div'); container.className='tradingview-widget-container'; container.style.width='100%'; container.style.height='100%';
+      const inner = document.createElement('div'); inner.className='tradingview-widget-container__widget';
+      container.appendChild(inner);
+      const script = document.createElement('script');
+      script.src='https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js';
+      script.async = true;
+      script.textContent = JSON.stringify({ symbol:item.s, width:'100%', height:140, locale:'ru', dateRange:'1D', colorTheme:'dark', isTransparent:true, autosize:false, chartOnly:false });
+      container.appendChild(script);
+      cell.appendChild(container);
+      grid.appendChild(cell);
+    });
+  })();
+
+  /* ---------- mini news widget (home) ---------- */
+  (function initMiniNews(){
+    const frame = document.getElementById('miniNewsFrame');
+    const container = document.createElement('div'); container.className='tradingview-widget-container'; container.style.width='100%';
+    const inner = document.createElement('div'); inner.className='tradingview-widget-container__widget'; container.appendChild(inner);
+    const script = document.createElement('script');
+    script.src='https://s3.tradingview.com/external-embedding/embed-widget-events.js'; script.async = true;
+    script.textContent = JSON.stringify({ colorTheme:'dark', isTransparent:true, width:'100%', height:'320', locale:'ru', importanceFilter:'1', countryFilter:'us,eu' });
+    container.appendChild(script);
+    frame.appendChild(container);
+  })();
+
+  /* ---------- options tracker ---------- */
+  let selectedOptType = null;
+  let optionsList = [];
+  document.getElementById('opt-type').addEventListener('click', (ev)=>{
+    if(ev.target.tagName!=='BUTTON') return;
+    document.querySelectorAll('#opt-type button').forEach(b=>b.classList.remove('sel'));
+    ev.target.classList.add('sel'); selectedOptType = ev.target.dataset.v;
+  });
+  async function loadOptions(){
+    try{ const r=await window.storage.get('optionsList', false); optionsList = r&&r.value?JSON.parse(r.value):[]; }catch(e){ optionsList=[]; }
+    renderOptions();
+  }
+  async function saveOptions(){ try{ await window.storage.set('optionsList', JSON.stringify(optionsList), false); }catch(e){} }
+  function renderOptions(){
+    const el = document.getElementById('optionsList');
+    if(optionsList.length===0){ el.innerHTML='<div class="empty-state" style="border-top:none;padding:0">Пока ничего не добавлено.</div>'; return; }
+    el.innerHTML='';
+    [...optionsList].sort((a,b)=>b.createdAt-a.createdAt).forEach(o=>{
+      const row = document.createElement('div'); row.className='option-row';
+      row.innerHTML = `<span class="opt-type ${o.type}">${o.type}</span><span class="opt-underlying">${escapeHtml(o.underlying)}</span><span class="opt-strike">страйк ${o.strike}</span><span class="opt-note">${escapeHtml(o.note||'')}</span><button class="link-btn" data-del="${o.id}">удалить</button>`;
+      row.querySelector('[data-del]').addEventListener('click', async ()=>{ optionsList = optionsList.filter(x=>x.id!==o.id); await saveOptions(); renderOptions(); });
+      el.appendChild(row);
+    });
+  }
+  document.getElementById('optionForm').addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+    if(!selectedOptType){ alert('Выберите CALL или PUT'); return; }
+    optionsList.push({ id:'o_'+Date.now(), underlying:document.getElementById('opt-underlying').value.trim(), type:selectedOptType,
+      strike:parseFloat(document.getElementById('opt-strike').value)||0, note:document.getElementById('opt-note').value.trim(), createdAt:Date.now() });
+    await saveOptions();
+    ev.target.reset();
+    document.querySelectorAll('#opt-type button').forEach(b=>b.classList.remove('sel')); selectedOptType=null;
+    renderOptions();
+  });
+  loadOptions();
+
+  /* ---------- ATTENTION widget ---------- */
+  const WEEKDAY_NAMES = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+  function renderAttention(){
+    const el = document.getElementById('attentionContent');
+    if(!el) return;
+    if(typeof journalTrades==='undefined' || journalTrades.length<5){
+      el.innerHTML = '<div class="page-sub" style="margin:0">Пока недостаточно сделок в журнале (нужно от 5), чтобы делать статистические выводы по дню недели.</div>';
+      return;
+    }
+    const todayWd = new Date().getDay();
+    const sameWd = journalTrades.filter(t=> new Date(t.date+'T00:00:00').getDay()===todayWd );
+    if(sameWd.length<2){
+      el.innerHTml=''; el.innerHTML = `<div class="page-sub" style="margin:0">Пока мало сделок по ${WEEKDAY_NAMES[todayWd]}м, чтобы делать вывод.</div>`;
+      return;
+    }
+    const totalPnl = sameWd.reduce((s,t)=>s+t.profit,0);
+    const wins = sameWd.filter(t=>t.result==='TP').length;
+    const winRate = Math.round(wins/sameWd.length*100);
+    const favorable = totalPnl>0 && winRate>=50;
+    el.innerHTML = `<div style="font-family:var(--font-serif);font-size:16px;margin-bottom:8px;color:${favorable?'var(--sage)':'var(--brick)'}">
+        Сегодня — ${WEEKDAY_NAMES[todayWd]}. По статистике журнала это ${favorable?'обычно благоприятный':'обычно непростой'} для вас день.
+      </div>
+      <div class="page-sub" style="margin:0">За все ${WEEKDAY_NAMES[todayWd]} в журнале: ${sameWd.length} сделок, winrate ${winRate}%, суммарный результат ${fmtMoney(totalPnl)}.</div>`;
+  }
+  renderAttention();
+
+  /* ============================================================ EXPORT / IMPORT ============================================================ */
+  const BACKUP_KEYS = ['newsAnalysis','importantNews','ideas','conditionsTemplate','accounts','journalTrades','quickCount','profile','courses','studyLinks','moodToday','optionsList'];
+
+  document.getElementById('exportBtn').addEventListener('click', async ()=>{
+    const msg = document.getElementById('exportImportMsg');
+    msg.style.color='var(--parchment-dim)'; msg.textContent='Собираю данные…';
+    try{
+      const data = { exportedAt: new Date().toISOString(), keys:{}, screenshots:{} };
+      for(const key of BACKUP_KEYS){
+        try{ const res = await window.storage.get(key, false); if(res && res.value!=null) data.keys[key] = res.value; }
+        catch(e){ /* key not set yet - skip */ }
+      }
+      // per-idea screenshots
+      let ideaList = [];
+      try{ ideaList = JSON.parse(data.keys.ideas || '[]'); }catch(e){ ideaList=[]; }
+      for(const idea of ideaList){
+        if(idea.hasScreenshot){
+          try{ const res = await window.storage.get('idea-screenshot:'+idea.id, false); if(res && res.value) data.screenshots[idea.id] = res.value; }
+          catch(e){}
+        }
+      }
+      const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'grossbukh-backup-'+todayStr()+'.json';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      msg.style.color='var(--sage)'; msg.textContent='Файл скачан. Загрузите его в другом чате через «Загрузить резервную копию».';
+    }catch(e){
+      msg.style.color='var(--brick)'; msg.textContent='Не удалось собрать данные для экспорта.';
+    }
+  });
+
+  document.getElementById('importBtn').addEventListener('click', ()=> document.getElementById('importFileInput').click());
+  document.getElementById('importFileInput').addEventListener('change', async (ev)=>{
+    const file = ev.target.files[0]; if(!file) return;
+    const msg = document.getElementById('exportImportMsg');
+    msg.style.color='var(--parchment-dim)'; msg.textContent='Загружаю…';
+    try{
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if(!data.keys){ throw new Error('Неверный формат файла'); }
+      for(const key of Object.keys(data.keys)){
+        await window.storage.set(key, data.keys[key], false);
+      }
+      if(data.screenshots){
+        for(const ideaId of Object.keys(data.screenshots)){
+          await window.storage.set('idea-screenshot:'+ideaId, data.screenshots[ideaId], false);
+        }
+      }
+      msg.style.color='var(--sage)'; msg.textContent='Данные загружены. Обновляю страницу…';
+      setTimeout(()=> location.reload(), 1200);
+    }catch(e){
+      msg.style.color='var(--brick)'; msg.textContent='Не удалось прочитать файл резервной копии.';
+    }
+  });
+
+})();
+</script>
+
+</body>
+</html>
